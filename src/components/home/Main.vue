@@ -6,7 +6,7 @@
                 <div class="goto__section__inner">
                     <h1 class="section__title">Looking for music?</h1>
                     <h2 class="section__text">Pick up your recently played right where you left off.</h2>
-                    <a class="goto__section__button" href="">launch web player</a>
+                    <a class="goto__section__button" >launch web player</a>
                 </div>
             </div>
         </section>
@@ -14,8 +14,17 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
+
 export default {
   name: 'Main',
+
+  computed: {
+    ...mapGetters({
+      "getProfile": "profile/getProfile", 
+      "getErrors": "getErrors"
+    })
+  },
 }
 </script>
 

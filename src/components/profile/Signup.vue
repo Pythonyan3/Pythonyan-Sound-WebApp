@@ -1,184 +1,253 @@
 <template>
-    <div class="signup">
-        <header class="header">
-            <a href="index.html">
-                <div class="header__logo">
-                    <img class="header__logo__icon" src="../../assets/images/snake_logo.png" alt="">
-                    <span class="header__logo__text">Pythonyan Sound</span>
-                </div>
-            </a>
-        </header>
+  <div class="signup">
+    <header class="header">
+      <router-link :to="{ name: 'Main' }">
+        <div class="header__logo">
+          <img
+            class="header__logo__icon"
+            src="../../assets/images/snake_logo.png"
+            alt=""
+          />
+          <span class="header__logo__text">Pythonyan Sound</span>
+        </div>
+      </router-link>
+    </header>
 
-        <section class="login__section">
-            <div class="container">
-                <div class="login__section__inner">
-                    <h1 class="section__title">Sign up for free to start listening.</h1>
+    <section class="login__section">
+      <div class="container">
+        <div class="login__section__inner">
+          <h1 class="section__title">Sign up for free to start listening.</h1>
 
-                    <form class="login__form" action="">
-                        
-                        <div class="input__block">
-                            <label class="label__item">What should we call you?</label>
-                            <input class="input__item" placeholder="Enter a profile name">
-                        </div>
-
-                        <div class="input__block">
-                            <label class="label__item">What is your email?</label>
-                            <input class="input__item"  type="email" placeholder="Enter your email">
-                        </div>
-
-                        <div class="input__block">
-                            <label class="label__item">Confirm your email</label>
-                            <input class="input__item"  type="email" placeholder="Enter your email again">
-                        </div>
-
-                        <div class="input__block">
-                            <label class="label__item">Create a password</label>
-                            <input class="input__item" type="password" placeholder="Enter a password">
-                        </div>
-
-                        <div class="input__block">
-                            <label class="label__item">Confirm your password</label>
-                            <input class="input__item" type="password" placeholder="Enter a password again">
-                        </div>
-
-                        <div class="input__block">
-                            <input class="submit__login" type="submit" value="sign up">
-                        </div>
-
-                        <div class="have__account">
-                            <span>Have an account?</span>
-                            <router-link :to="{name: 'Login'}" class="have__account__link">Log in</router-link>
-                        </div>
-                    </form>
-                </div>
+          <form @submit.prevent="signup" class="login__form" action="">
+            <div class="input__block">
+              <label class="label__item">What should we call you?</label>
+              <input
+                v-model="signup_form.username"
+                class="input__item"
+                placeholder="Enter a profile name"
+                required
+              />
             </div>
-        </section>
-    </div>
+
+            <div class="input__block">
+              <label class="label__item">What is your email?</label>
+              <input
+                v-model="signup_form.email"
+                class="input__item"
+                type="email"
+                placeholder="Enter your email"
+                required
+              />
+            </div>
+
+            <div class="input__block">
+              <label class="label__item">Create a password</label>
+              <input
+                v-model="signup_form.password"
+                class="input__item"
+                type="password"
+                placeholder="Enter a password"
+                minlength="4"
+                required
+              />
+            </div>
+
+            <div class="input__block">
+              <label class="label__item">Confirm your password</label>
+              <input
+                v-model="signup_form.confirm_password"
+                class="input__item"
+                type="password"
+                placeholder="Enter a password again"
+                minlength="4"
+                required
+              />
+            </div>
+
+            <div class="input__block">
+              <input class="submit__login" type="submit" value="sign up" />
+            </div>
+
+            <div class="have__account">
+              <span>Have an account?</span>
+              <router-link :to="{ name: 'Login' }" class="have__account__link"
+                >Log in</router-link
+              >
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+  </div>
 </template>
 
 <script>
+import { mapGetters, mapActions } from "vuex";
+
 export default {
-  name: 'Signup',
-}
+  name: "Signup",
+
+  data() {
+    return {
+      signup_form: {
+        username: "",
+        email: "",
+        password: "",
+        confirm_password: "",
+      },
+      isLoading: false,
+    };
+  },
+
+  computed: {
+    ...mapGetters({
+      getProfile: "profile/getProfile",
+      getErrors: "getErrors",
+    }),
+  },
+  /**
+   * Checks user's credentials in storage
+   * If it contains credentials then redirect to Main component
+   */
+  created() {
+    if (this.getProfile) {
+      this.$router.replace({ name: "Main" });
+    }
+  },
+  /**
+   * Clear errors from vuex storage before left
+   */
+  unmounted() {
+    this.clear_errors();
+  },
+
+  methods: {
+    ...mapActions({
+      clear_errors: "clear_errors",
+    }),
+    signup(){
+        console.log(this.signup_form);
+    }
+  },
+};
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-*{	
-    color: black;
+* {
+  color: black;
 }
 
-body{
-    display: flex;
-    flex-direction: column;
+body {
+  display: flex;
+  flex-direction: column;
 }
 
-.header{
-    display: flex;
-    justify-content: center;
+.header {
+  display: flex;
+  justify-content: center;
 }
 
-.header__logo{
-    display: flex;
-    flex-direction: row;
-    align-items: center;
+.header__logo {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
 }
 
-.header__logo__icon{
-    max-width: 100px;
-    max-width: 100px;
+.header__logo__icon {
+  max-width: 100px;
+  max-width: 100px;
 }
 
-.header__logo__text{
-    font-weight: 600;
-    font-size: 2rem;
+.header__logo__text {
+  font-weight: 600;
+  font-size: 2rem;
 }
 
-.login__section{
-    width: 100%;
+.login__section {
+  width: 100%;
 }
 
-.container{
-	width: 100%;
-    max-width: 1185px;
-    margin: 0 auto;
+.container {
+  width: 100%;
+  max-width: 1185px;
+  margin: 0 auto;
 }
 
-.login__section__inner{
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
+.login__section__inner {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
 }
 
-.login__form{
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    width: 450px;
-    margin-top: 15px;
+.login__form {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  width: 450px;
+  margin-top: 15px;
 }
 
-.section__title{
-    margin-top: 40px;
-    font-weight: 600;
-    font-size: 1.5rem;
-    text-align: center;
+.section__title {
+  margin-top: 40px;
+  font-weight: 600;
+  font-size: 1.5rem;
+  text-align: center;
 }
 
-.input__block{
-    display: flex;
-    flex-direction: column;
-    margin-top: 25px;
+.input__block {
+  display: flex;
+  flex-direction: column;
+  margin-top: 25px;
 }
 
-
-.label__item{
-    font-weight: 600;
-    margin-bottom: 10px;
+.label__item {
+  font-weight: 600;
+  margin-bottom: 10px;
 }
 
-.input__item{
-    height: 40px;
-    padding: 6px 12px;   
-    border: 1px solid #d9dadc;
+.input__item {
+  height: 40px;
+  padding: 6px 12px;
+  border: 1px solid #d9dadc;
 }
 
-input:focus{
-    outline: none !important;
-    border: 1px solid #919496;
+input:focus {
+  outline: none !important;
+  border: 1px solid #919496;
 }
 
-.submit__block{
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-top: 25px;
+.submit__block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 25px;
 }
 
-.submit__login{
-    min-width: 160px;
-    padding: 16px 14px 18px;
-    border: 0;
-    border-radius: 100px;
-    font-weight: 600;
-    background-color: #FFCBDB;
-    text-transform: uppercase;
-    transition: 0.3s;
+.submit__login {
+  min-width: 160px;
+  padding: 16px 14px 18px;
+  border: 0;
+  border-radius: 100px;
+  font-weight: 600;
+  background-color: #ffcbdb;
+  text-transform: uppercase;
+  transition: 0.3s;
 }
 
-.submit__login:hover{
-    background-color:#ffa1bd;
-    cursor: pointer;
+.submit__login:hover {
+  background-color: #ffa1bd;
+  cursor: pointer;
 }
 
-.have__account{
-    margin: 15px 15px;
-    text-align: center;
+.have__account {
+  margin: 15px 15px;
+  text-align: center;
 }
 
-.have__account__link{
-    color: #ffa1bd;
+.have__account__link {
+  color: #ffa1bd;
 }
 </style>
