@@ -6,7 +6,7 @@ export default function (axios_instance) {
          * @param {*} payload - request body data
          * @returns axios promise response
          */
-        SignUp(payload) {
+        signup(payload) {
             return axios_instance.post("profile/registration/", payload)
         },
         /**
@@ -15,7 +15,7 @@ export default function (axios_instance) {
          * @param {*} payload - request body data
          * @returns axios promise response
          */
-        LogIn(payload) {
+        login(payload) {
             return axios_instance.post("profile/login/", payload)
         },
         /**
@@ -24,7 +24,7 @@ export default function (axios_instance) {
          * @param {*} payload - request body data
          * @returns axios promise response
          */
-        LogOut(payload, access_token) {
+        logout(payload, access_token) {
             return axios_instance.post("profile/logout/", payload, {
                 headers: {
                     'Authorization': `Bearer ${access_token}`

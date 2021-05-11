@@ -121,14 +121,14 @@ export default {
       // clear all previous errors
       this.isLoading = true;
       this.clear_errors();
-      await this.login_action({
+      const result = await this.login_action({
         api: this.$api,
         error_parser: this.$response_error_parser,
         username: this.login_form.username,
         password: this.login_form.password
       });
       this.isLoading = false;
-      if (this.getProfile){
+      if (result){
         this.$router.replace({ name: 'Main' });
       }
     },

@@ -24,16 +24,28 @@ export default {
     actions: {
         async login_action({ commit }, { api, error_parser, ...payload }) {
             try {
-                const response = (await api.profile.LogIn(payload));
+                const response = (await api.profile.login(payload));
                 commit("SET_PROFILE", response.data);
+                return true;
             } catch (error) {
                 error_parser(commit, error);
+                return false;
+            }
+        },
+
+        async signup_action({ commit }, { api, error_parser, ...payload }) {
+            try {
+                await api.profile.signup(payload);
+                return true;
+            } catch (error) {
+                error_parser(commit, error);
+                return false
             }
         },
 
         async logout_action({ commit, state}, { api, error_parser }) {
             try {
-                await api.profile.LogOut(
+                await api.profile.logout(
                     { 
                         refresh: state.profile.refresh 
                     },
@@ -41,8 +53,10 @@ export default {
                 );
 
                 commit("CLEAR_PROFILE");
+                return true;
             } catch (error) {
                 error_parser(commit, error);
+                return false;
             }
         }
     }

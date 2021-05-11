@@ -19,6 +19,12 @@
           <h1 class="section__title">Sign up for free to start listening.</h1>
 
           <form @submit.prevent="signup" class="login__form" action="">
+            <div v-if="getErrors.length" class="errors">
+              <div v-for="error in getErrors" :key="error">
+                {{ error }}
+              </div>
+            </div>
+
             <div class="input__block">
               <label class="label__item">What should we call you?</label>
               <input
@@ -99,12 +105,6 @@ export default {
     };
   },
 
-  computed: {
-    ...mapGetters({
-      getProfile: "profile/getProfile",
-      getErrors: "getErrors",
-    }),
-  },
   /**
    * Checks user's credentials in storage
    * If it contains credentials then redirect to Main component
@@ -121,13 +121,35 @@ export default {
     this.clear_errors();
   },
 
+  computed: {
+    ...mapGetters({
+      getProfile: "profile/getProfile",
+      getErrors: "getErrors",
+    }),
+  },
+
   methods: {
     ...mapActions({
+      signup_action: "profile/signup_action",
       clear_errors: "clear_errors",
     }),
-    signup(){
-        console.log(this.signup_form);
-    }
+
+    async signup() {
+      this.clear_errors();
+    
+      const result = await this.signup_action({
+        api: this.$api,
+        error_parser: this.$response_error_parser,
+        username: this.signup_form.username,
+        email: this.signup_form.email,
+        password: this.signup_form.password,
+        confirm_password: this.signup_form.confirm_password,
+      });
+
+      if (result) {
+        this.$router.push({ name: "Login" });
+      }
+    },
   },
 };
 </script>
@@ -180,6 +202,14 @@ body {
   justify-content: center;
   align-items: center;
   width: 100%;
+}
+
+.errors {
+  width: 100%;
+  margin: 15px 0 0 0;
+  padding: 10px 5px 10px 5px;
+  background-color: #ffa1bd;
+  text-align: center;
 }
 
 .login__form {

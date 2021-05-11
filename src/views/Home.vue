@@ -107,7 +107,7 @@ export default {
       logout_action: "profile/logout_action",
     }),
 
-    logout() {
+    async logout() {
       this.logout_action({
         api: this.$api,
         error_parser: this.$response_error_parser,
