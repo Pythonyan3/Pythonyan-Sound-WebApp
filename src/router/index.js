@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '../views/Home.vue'
 import Profile from '../views/Profile.vue'
+import Management from '../views/Management.vue'
 
 const routes = [
   {
@@ -26,14 +27,26 @@ const routes = [
     component: Profile,
     children: [
       {
-        path: 'login',
-        name: 'Login',
-        component: () => import('../components/profile/Login.vue')
-      },
-      {
-        path: 'signup',
-        name: 'Signup',
-        component: () => import('../components/profile/Signup.vue')
+        path: "",
+        name: "Management",
+        component: Management,
+        children: [
+          {
+            path: 'login',
+            name: 'Login',
+            component: () => import('../components/profile/Login.vue')
+          },
+          {
+            path: 'signup',
+            name: 'Signup',
+            component: () => import('../components/profile/Signup.vue')
+          },
+          {
+            path: 'email-verification/:verify_token',
+            name: 'EmailVerification',
+            component: () => import('../components/profile/EmailVerification.vue')
+          },
+        ]
       },
     ]
   },

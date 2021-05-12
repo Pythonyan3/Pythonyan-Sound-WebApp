@@ -55,7 +55,24 @@ export default {
                 commit("CLEAR_PROFILE");
                 return true;
             } catch (error) {
+                console.log(error.response.data);
                 error_parser(commit, error);
+                return false;
+            }
+        },
+
+        async email_verify_action({ state }, { api, verify_token }){
+            try {
+                await api.profile.email_verify(
+                    { 
+                        token: verify_token
+                    }
+                );
+                if (state.profile){
+                    state.profile.is_verified = true;
+                }
+                return true;
+            } catch (error) {
                 return false;
             }
         }

@@ -25,11 +25,15 @@ export default function (axios_instance) {
          * @returns axios promise response
          */
         logout(payload, access_token) {
-            return axios_instance.post("profile/logout/", payload, {
+            return axios_instance.delete("profile/logout/", {
                 headers: {
                     'Authorization': `Bearer ${access_token}`
-                }
+                },
+                data: payload
             })
         },
+        email_verify(payload){
+            return axios_instance.post("profile/registration/email-verify/", payload);
+        }
     }
 }

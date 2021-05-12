@@ -1,29 +1,12 @@
 <template>
-  <div class="signup">
-    <header class="header">
-      <router-link :to="{ name: 'Main' }">
-        <div class="header__logo">
-          <img
-            class="header__logo__icon"
-            src="../../assets/images/snake_logo.png"
-            alt=""
-          />
-          <span class="header__logo__text">Pythonyan Sound</span>
-        </div>
-      </router-link>
-    </header>
-
-    <section class="login__section">
-      <div class="container">
-        <div class="login__section__inner">
-          <h1 class="section__title">Sign up for free to start listening.</h1>
+  <section class="login__section">
+    <div class="container">
+      <div class="login__section__inner">
+        <template v-if="!isRegistered">
+          <div class="section__title">Sign up for free to start listening.</div>
 
           <form @submit.prevent="signup" class="login__form" action="">
-            <div v-if="getErrors.length" class="errors">
-              <div v-for="error in getErrors" :key="error">
-                {{ error }}
-              </div>
-            </div>
+            <ErrorMessages />
 
             <div class="input__block">
               <label class="label__item">What should we call you?</label>
@@ -71,7 +54,26 @@
             </div>
 
             <div class="input__block">
-              <input class="submit__login" type="submit" value="sign up" />
+              <div v-if="isLoading" class="loading_spinner">
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+              </div>
+              <input
+                v-else
+                class="submit__login"
+                type="submit"
+                value="sign up"
+              />
             </div>
 
             <div class="have__account">
@@ -81,17 +83,27 @@
               >
             </div>
           </form>
-        </div>
+        </template>
+        <template v-else>
+          <div class="section__title">&#127881; Thank you for registration on Pythonyan Sound &#128013;</div>
+          <div class="section__subtitle">&#128591; Please check your mailbox for verifying your email address &#128231;</div>
+          <div class="section__subtitle">&#127775; You can login to your profile <router-link :to="{name: 'Login'}" class="here__login__link">here</router-link> &#129311;</div>
+        </template>
       </div>
-    </section>
-  </div>
+    </div>
+  </section>
 </template>
 
 <script>
+import ErrorMessages from "./ErrorMessages.vue";
 import { mapGetters, mapActions } from "vuex";
 
 export default {
   name: "Signup",
+
+  components: {
+    ErrorMessages,
+  },
 
   data() {
     return {
@@ -102,6 +114,7 @@ export default {
         confirm_password: "",
       },
       isLoading: false,
+      isRegistered: false,
     };
   },
 
@@ -136,7 +149,8 @@ export default {
 
     async signup() {
       this.clear_errors();
-    
+      this.isLoading = true;
+
       const result = await this.signup_action({
         api: this.$api,
         error_parser: this.$response_error_parser,
@@ -145,10 +159,9 @@ export default {
         password: this.signup_form.password,
         confirm_password: this.signup_form.confirm_password,
       });
+      this.isLoading = false;
 
-      if (result) {
-        this.$router.push({ name: "Login" });
-      }
+      this.isRegistered = result;
     },
   },
 };
@@ -158,32 +171,6 @@ export default {
 <style scoped>
 * {
   color: black;
-}
-
-body {
-  display: flex;
-  flex-direction: column;
-}
-
-.header {
-  display: flex;
-  justify-content: center;
-}
-
-.header__logo {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-}
-
-.header__logo__icon {
-  max-width: 100px;
-  max-width: 100px;
-}
-
-.header__logo__text {
-  font-weight: 600;
-  font-size: 2rem;
 }
 
 .login__section {
@@ -204,14 +191,6 @@ body {
   width: 100%;
 }
 
-.errors {
-  width: 100%;
-  margin: 15px 0 0 0;
-  padding: 10px 5px 10px 5px;
-  background-color: #ffa1bd;
-  text-align: center;
-}
-
 .login__form {
   display: flex;
   flex-direction: column;
@@ -224,6 +203,13 @@ body {
   margin-top: 40px;
   font-weight: 600;
   font-size: 1.5rem;
+  text-align: center;
+}
+
+.section__subtitle {
+  margin-top: 40px;
+  font-weight: 600;
+  font-size: 1.3rem;
   text-align: center;
 }
 
@@ -272,12 +258,47 @@ input:focus {
   cursor: pointer;
 }
 
+.loading_spinner {
+  position: relative;
+  min-width: 160px;
+  min-height: 55px;
+  border: 1px solid #ffcbdb;
+  border-radius: 100px;
+  background-color: #ffcbdb;
+}
+
+.loading_spinner:after {
+  content: " ";
+  display: block;
+  width: 25px;
+  height: 25px;
+  margin: 7px auto 0 auto;
+  border-radius: 50%;
+  border: 6px solid #000;
+  border-color: #000 transparent #000 transparent;
+  animation: loading_spinner 1.2s linear infinite;
+}
+
+@keyframes loading_spinner {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
 .have__account {
   margin: 15px 15px;
   text-align: center;
 }
 
 .have__account__link {
+  color: #ffa1bd;
+}
+
+.here__login__link{
+  font-size: 1.3rem;
   color: #ffa1bd;
 }
 </style>

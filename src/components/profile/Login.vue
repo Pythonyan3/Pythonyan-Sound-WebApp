@@ -1,102 +1,99 @@
 <template>
-  <div class="login">
-    <header class="header">
-      <router-link :to="{ name: 'Main' }">
-        <div class="header__logo">
-          <img
-            class="header__logo__icon"
-            src="../../assets/images/snake_logo.png"
-            alt=""
-          />
-          <span class="header__logo__text">Pythonyan Sound</span>
-        </div>
-      </router-link>
-    </header>
-    <section class="login__section">
-      <div class="container">
-        <div class="login__section__inner">
-          <form @submit.prevent="login" class="login__form" action="">
-            <h2 class="section__text">
-              To continue, log in to Pythonyan Sound.
-            </h2>
+  <section class="login__section">
+    <div class="container">
+      <div class="login__section__inner">
+        <form @submit.prevent="login" class="login__form" action="">
+          <div class="section__text">To continue, log in to Pythonyan Sound.</div>
 
-            <div v-if="getErrors.length" class="errors">
-              <div v-for="error in getErrors" :key="error">
-                {{ error }}
-              </div>
+          <ErrorMessages />
+
+          <div class="input__block">
+            <label class="label__item">Enter username or email address</label>
+            <input
+              v-model="login_form.username"
+              class="input__item"
+              placeholder="Username"
+              minlength="4"
+              required
+            />
+          </div>
+
+          <div class="input__block">
+            <label class="label__item">Enter a password</label>
+            <input
+              v-model="login_form.password"
+              class="input__item"
+              type="password"
+              placeholder="Password"
+              minlength="4"
+              required
+            />
+          </div>
+
+          <div class="input__block submit__block">
+            <div v-if="isLoading" class="loading_spinner">
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
+              <div></div>
             </div>
+            <input v-else class="submit__login" type="submit" value="log in" />
+          </div>
 
-            <div class="input__block">
-              <label class="label__item">Enter username or email address</label>
-              <input
-                v-model="login_form.username"
-                class="input__item"
-                placeholder="Username"
-                minlength="4"
-                required
-              />
-            </div>
+          <div class="divider"></div>
 
-            <div class="input__block">
-              <label class="label__item">Enter a password</label>
-              <input
-                v-model="login_form.password"
-                class="input__item"
-                type="password"
-                placeholder="Password"
-                minlength="4"
-                required
-              />
-            </div>
+          <div class="section__text">Don't have an account?</div>
 
-            <div class="input__block submit__block">
-              <div v-if="isLoading" class="loading_spinner">
-                <div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
-              </div>
-              <input v-else class="submit__login" type="submit" value="log in" />
-            </div>
-
-            <div class="divider"></div>
-
-            <h2 class="section__text">Don't have an account?</h2>
-
-            <router-link :to="{ name: 'Signup' }" class="sign__button"
-              >sign up for pythonyan sound</router-link
-            >
-          </form>
-        </div>
+          <router-link :to="{ name: 'Signup' }" class="sign__button"
+            >sign up for pythonyan sound</router-link
+          >
+        </form>
       </div>
-    </section>
-  </div>
+    </div>
+  </section>
 </template>
 
 <script>
-import { mapGetters, mapActions } from "vuex"
+import ErrorMessages from "./ErrorMessages.vue"
+import { mapGetters, mapActions } from "vuex";
 
 export default {
   name: "Login",
+  
+  components: {
+    ErrorMessages
+  },
+
   data() {
     return {
       login_form: {
         username: "",
         password: "",
       },
-      isLoading: false
+      isLoading: false,
     };
   },
   computed: {
     ...mapGetters({
-      "getProfile": "profile/getProfile", 
-      "getErrors": "getErrors"
-      })
+      getProfile: "profile/getProfile",
+      getErrors: "getErrors",
+    }),
   },
   /**
    * Checks user's credentials in storage
    * If it contains credentials then redirect to Main component
    */
-  created(){
-    if (this.getProfile){
-      this.$router.replace({ name: 'Main' })
+  created() {
+    if (this.getProfile) {
+      this.$router.replace({ name: "Main" });
     }
   },
   /**
@@ -107,9 +104,9 @@ export default {
   },
   methods: {
     ...mapActions({
-        "login_action": "profile/login_action",
-        "clear_errors": "clear_errors"
-      }),
+      login_action: "profile/login_action",
+      clear_errors: "clear_errors",
+    }),
     /**
      * Sends request to Backend server to login user with POST method
      * Request body contains:
@@ -125,14 +122,14 @@ export default {
         api: this.$api,
         error_parser: this.$response_error_parser,
         username: this.login_form.username,
-        password: this.login_form.password
+        password: this.login_form.password,
       });
       this.isLoading = false;
-      if (result){
-        this.$router.replace({ name: 'Main' });
+      if (result) {
+        this.$router.replace({ name: "Main" });
       }
     },
-  }
+  },
 };
 </script>
 
@@ -140,27 +137,6 @@ export default {
 <style scoped>
 * {
   color: black;
-}
-
-.header {
-  display: flex;
-  justify-content: center;
-  border-bottom: 1px solid #d9dadc;
-}
-
-.header__logo {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-}
-
-.header__logo__icon {
-  max-width: 100px;
-}
-
-.header__logo__text {
-  font-weight: 600;
-  font-size: 2rem;
 }
 
 .login__section {
@@ -179,14 +155,6 @@ export default {
   justify-content: center;
   align-items: center;
   width: 100%;
-}
-
-.errors {
-  width: 100%;
-  margin: 15px 0 0 0;
-  padding: 10px 5px 10px 5px;
-  background-color: #ffa1bd;
-  text-align: center;
 }
 
 .login__form {
@@ -244,16 +212,15 @@ input:focus {
 .loading_spinner:after {
   content: " ";
   display: block;
-  position: absolute;
-  top: 8px;
-  left: 60px;
   width: 25px;
   height: 25px;
+  margin: 7px auto 0 auto;
   border-radius: 50%;
   border: 6px solid #000;
   border-color: #000 transparent #000 transparent;
   animation: loading_spinner 1.2s linear infinite;
 }
+
 @keyframes loading_spinner {
   0% {
     transform: rotate(0deg);
@@ -302,4 +269,5 @@ input:focus {
   color: white;
   background-color: #616467;
 }
+
 </style>
