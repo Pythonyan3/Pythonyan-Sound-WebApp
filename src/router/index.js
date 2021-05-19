@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Home from '../views/Home.vue'
 import Profile from '../views/Profile.vue'
 import Management from '../views/Management.vue'
+import WebPlayer from '../views/WebPlayer.vue'
 
 const routes = [
   {
@@ -50,6 +51,22 @@ const routes = [
       },
     ]
   },
+  {
+    path: "/webplayer",
+    component: WebPlayer,
+    children: [
+      {
+        path: "",
+        name: "WebPlayer",
+        component: () => import('../components/web_player/Main.vue')
+      },
+      {
+        path: "search",
+        name: "WebPlayerSearch",
+        component: () => import('../components/web_player/Search.vue')
+      },
+    ]
+  }
 ]
 
 const router = createRouter({

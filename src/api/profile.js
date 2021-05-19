@@ -20,8 +20,9 @@ export default function (axios_instance) {
         },
         /**
          * Sends HTTP request to Backend for user logout
-         * Uses POST method
+         * Uses DELETE method
          * @param {*} payload - request body data
+         * @param {string}} access_token - contains token to Authorization header
          * @returns axios promise response
          */
         logout(payload, access_token) {
@@ -32,6 +33,12 @@ export default function (axios_instance) {
                 data: payload
             })
         },
+        /**
+         * Sends HTTP request to Backend for verfying user's email address
+         * Uses POST method
+         * @param {*} payload - request body data
+         * @returns axios promise response
+         */
         email_verify(payload){
             return axios_instance.post("profile/registration/email-verify/", payload);
         }
