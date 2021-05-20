@@ -43,7 +43,7 @@ export default {
             }
         },
 
-        async logout_action({ commit, state}, { api, error_parser }) {
+        async logout_action({ state, commit }, { api, error_parser }) {
             try {
                 await api.profile.logout(
                     { 
@@ -55,7 +55,6 @@ export default {
                 commit("CLEAR_PROFILE");
                 return true;
             } catch (error) {
-                console.log(error.response.data);
                 error_parser(commit, error);
                 return false;
             }

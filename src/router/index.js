@@ -65,6 +65,11 @@ const routes = [
         name: "WebPlayerSearch",
         component: () => import('../components/web_player/Search.vue')
       },
+      {
+        path: "profile/:id",
+        name: "WebPlayerProfile",
+        component: () => import('../components/web_player/Profile.vue')
+      },
     ]
   }
 ]

@@ -32,6 +32,9 @@ export default {
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
 /*Main View Content*/
+.playlists {
+  margin-top: 25px;
+}
 
 .playlists__inner {
   display: grid;

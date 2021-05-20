@@ -3,7 +3,7 @@ export default function (axios_instance) {
         search(searchString) {
             return axios_instance.get(`search/${searchString}/`, {
                 headers: {
-                    'Authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjIxNTE0ODg2LCJqdGkiOiIyODc4NWI1NTg2NDU0ODM4YWZhOTZmNmM1OTNhMWZlOCIsInVzZXJfaWQiOjF9.HePvwFtHf3UCwj-u-bQ5_xauXBaSBQg4B94GDZKJmoA'
+                    'Authorization': ''
                 }
             })
         },

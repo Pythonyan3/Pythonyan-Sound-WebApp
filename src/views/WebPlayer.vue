@@ -1,16 +1,16 @@
 <template>
   <div class="grid__wrapper">
     <div class="nav__bar">
-      <a href="">
+      <router-link :to="{ name: 'WebPlayer' }">
         <div class="nav__logo">
           <img
             class="nav__logo__icon"
             src="../assets/images/snake_logo.png"
             alt=""
           />
-          <span class="nav__logo__title">Pythonyan Sound</span>
+          <span class="nav__logo__title">PythonyanSound</span>
         </div>
-      </a>
+      </router-link>
 
       <div class="nav__menu">
         <router-link :to="{ name: 'WebPlayer' }">
@@ -247,17 +247,25 @@ a {
 
 ::v-deep(.container) {
   width: 100%;
-  padding: 10px 30px;
+  padding: 0 30px;
 }
 
 /*Main View Header*/
+.main__view__header {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  background-color: rgb(18, 18, 18);
+}
+
 .main__view__header__inner {
   display: flex;
   flex-direction: row;
   justify-content: flex-end;
+  align-items: center;
+  box-sizing: border-box;
   height: 60px;
   width: 100%;
-  padding: 10px 0;
 }
 
 .user__bar {

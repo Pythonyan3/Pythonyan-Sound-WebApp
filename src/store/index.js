@@ -1,9 +1,10 @@
 import { createStore } from 'vuex'
 import profile from './profile'
+import search from './search'
 
 
 export default createStore({
-  modules: { profile },
+  modules: { profile, search },
   state: {
     errors: []
   },
