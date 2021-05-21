@@ -28,23 +28,11 @@
           <template v-if="isLoading">
             <div class="loading_spinner__title">Searching...</div>
             <div class="loading_spinner">
-              <div></div>
-              <div></div>
-              <div></div>
-              <div></div>
-              <div></div>
-              <div></div>
-              <div></div>
-              <div></div>
-              <div></div>
-              <div></div>
-              <div></div>
-              <div></div>
             </div>
           </template>
 
           <!--Some errors was occurred while search request-->
-          <template v-else-if="wasErrorOccurred">
+          <template v-else-if="getError.status && getError.data">
             <ErrorsPlug
               title="Some error was occurred while search"
               message="Please try to search again or back for it later."
@@ -77,30 +65,35 @@
                 </div>
 
                 <div class="compilation__card-container">
-                  <div
+                  <router-link
                     v-for="artist in getSearchArtistsResults"
                     :key="artist"
-                    class="compilation__card-item"
+                    :to="{
+                      name: 'WebPlayerProfile',
+                      params: { id: artist.id },
+                    }"
                   >
-                    <div
-                      class="compilation__card-item__image compilation__card-item__profile-photo"
-                    >
-                      <img
-                        class="compilation__card-item__image-photo"
-                        :src="artist.photo || ''"
-                        alt=""
-                        onerror="this.style.display='none'"
-                      />
-                      <i
-                        class="far fa-user fa-5x compilation__card-item__image-plug"
-                      ></i>
-                    </div>
+                    <div class="compilation__card-item">
+                      <div
+                        class="compilation__card-item__image compilation__card-item__profile-photo"
+                      >
+                        <img
+                          class="compilation__card-item__image-photo"
+                          :src="artist.photo || ''"
+                          alt=""
+                          onerror="this.style.display='none'"
+                        />
+                        <i
+                          class="far fa-user fa-5x compilation__card-item__image-plug"
+                        ></i>
+                      </div>
 
-                    <div class="compilation__card-item__title">
-                      {{ artist.username }}
+                      <div class="compilation__card-item__title">
+                        {{ artist.username }}
+                      </div>
+                      <div class="compilation__card-item__autors">Artist</div>
                     </div>
-                    <div class="compilation__card-item__autors">Artist</div>
-                  </div>
+                  </router-link>
                 </div>
               </div>
 
@@ -231,13 +224,18 @@ export default {
 
   data() {
     return {
-      wasErrorOccurred: false,
       isLoading: false,
     };
   },
 
+  mounted() {
+    this.$store.commit("CLEAR_ERROR");
+  },
+
   computed: {
     ...mapGetters({
+      getError: "getError",
+
       getSearchString: "search/getSearchString",
       getSearchArtistsResults: "search/getSearchArtistsResults",
       getSearchProfilesResults: "search/getSearchProfilesResults",
@@ -266,13 +264,13 @@ export default {
 
     async search() {
       if (this.searchString) {
+        this.$store.commit("CLEAR_ERROR");
         this.isLoading = true;
 
-        this.wasErrorOccurred = !(await this.search_action({
+        await this.search_action({
           api: this.$api,
-          error_parser: this.$response_error_parser,
           searchString: this.searchString,
-        }));
+        });
 
         this.isLoading = false;
       }

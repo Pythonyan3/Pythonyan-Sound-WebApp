@@ -84,9 +84,9 @@ export default {
   computed: {
     ...mapGetters({
       getProfile: "profile/getProfile",
-      getErrors: "getErrors",
     }),
   },
+
   /**
    * Checks user's credentials in storage
    * If it contains credentials then redirect to Main component
@@ -100,12 +100,11 @@ export default {
    * Clear errors from vuex storage before left
    */
   unmounted() {
-    this.clear_errors();
+    this.$store.commit("CLEAR_ERROR");
   },
   methods: {
     ...mapActions({
       login_action: "profile/login_action",
-      clear_errors: "clear_errors",
     }),
     /**
      * Sends request to Backend server to login user with POST method
@@ -117,10 +116,9 @@ export default {
     async login() {
       // clear all previous errors
       this.isLoading = true;
-      this.clear_errors();
+      this.$store.commit("CLEAR_ERROR");
       const result = await this.login_action({
         api: this.$api,
-        error_parser: this.$response_error_parser,
         username: this.login_form.username,
         password: this.login_form.password,
       });

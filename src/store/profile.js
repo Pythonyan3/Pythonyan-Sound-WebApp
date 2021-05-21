@@ -22,28 +22,28 @@ export default {
         }
     },
     actions: {
-        async login_action({ commit }, { api, error_parser, ...payload }) {
+        async login_action({ commit }, { api, ...payload }) {
             try {
                 const response = (await api.profile.login(payload));
                 commit("SET_PROFILE", response.data);
                 return true;
             } catch (error) {
-                error_parser(commit, error);
+                commit("SET_ERROR", error, { root: true })
                 return false;
             }
         },
 
-        async signup_action({ commit }, { api, error_parser, ...payload }) {
+        async signup_action({ commit }, { api, ...payload }) {
             try {
                 await api.profile.signup(payload);
                 return true;
             } catch (error) {
-                error_parser(commit, error);
+                commit("SET_ERROR", error, { root: true })
                 return false
             }
         },
 
-        async logout_action({ state, commit }, { api, error_parser }) {
+        async logout_action({ state, commit }, { api }) {
             try {
                 await api.profile.logout(
                     { 
@@ -55,7 +55,7 @@ export default {
                 commit("CLEAR_PROFILE");
                 return true;
             } catch (error) {
-                error_parser(commit, error);
+                commit("SET_ERROR", error, { root: true });
                 return false;
             }
         },
@@ -72,6 +72,15 @@ export default {
                 }
                 return true;
             } catch (error) {
+                return false;
+            }
+        },
+
+        async getProfileAction({ commit }, { api, profileId }) {
+            try {
+                return await api.profile.profile_info(profileId);
+            } catch (error) {
+                commit("SET_ERROR", error, { root: true });
                 return false;
             }
         }

@@ -102,6 +102,10 @@ export default {
     }),
   },
 
+  unmounted() {
+    this.$store.commit("CLEAR_ERROR");
+  },
+
   methods: {
     ...mapActions({
       logout_action: "profile/logout_action",
@@ -110,7 +114,6 @@ export default {
     async logout() {
       this.logout_action({
         api: this.$api,
-        error_parser: this.$response_error_parser,
       });
     },
   },

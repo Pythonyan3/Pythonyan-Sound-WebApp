@@ -67,13 +67,12 @@ export default {
    * Clear errors from vuex storage before left
    */
   unmounted() {
-    this.clear_errors();
+    this.$store.commit("CLEAR_ERROR");
   },
 
   computed: {
     ...mapGetters({
       getProfile: "profile/getProfile",
-      getErrors: "getErrors",
     }),
   },
 
@@ -84,7 +83,7 @@ export default {
     }),
 
     async email_verify() {
-      this.clear_errors();
+      this.$store.commit("CLEAR_ERROR");
       const result = await this.email_verify_action({
         api: this.$api,
         verify_token: this.$route.params.verify_token,

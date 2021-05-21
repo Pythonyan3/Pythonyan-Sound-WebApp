@@ -1,7 +1,7 @@
 <template>
-  <div v-if="getErrors.length" class="errors">
-    <div v-for="error in getErrors" :key="error">
-      {{ error }}
+  <div v-if="getErrorData.length" class="errors">
+    <div v-for="message in getErrorData" :key="message">
+      {{ message }}
     </div>
   </div>
 </template>
@@ -14,7 +14,7 @@ export default {
 
   computed: {
     ...mapGetters({
-      getErrors: "getErrors",
+      getErrorData: "getErrorData",
     }),
   },
 };

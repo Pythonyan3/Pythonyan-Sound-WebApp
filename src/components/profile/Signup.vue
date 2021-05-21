@@ -131,29 +131,26 @@ export default {
    * Clear errors from vuex storage before left
    */
   unmounted() {
-    this.clear_errors();
+    this.$store.commit("CLEAR_ERROR");
   },
 
   computed: {
     ...mapGetters({
       getProfile: "profile/getProfile",
-      getErrors: "getErrors",
     }),
   },
 
   methods: {
     ...mapActions({
       signup_action: "profile/signup_action",
-      clear_errors: "clear_errors",
     }),
 
     async signup() {
-      this.clear_errors();
+      this.$store.commit("CLEAR_ERROR");
       this.isLoading = true;
 
       const result = await this.signup_action({
         api: this.$api,
-        error_parser: this.$response_error_parser,
         username: this.signup_form.username,
         email: this.signup_form.email,
         password: this.signup_form.password,

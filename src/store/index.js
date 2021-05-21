@@ -6,24 +6,48 @@ import search from './search'
 export default createStore({
   modules: { profile, search },
   state: {
-    errors: []
+    error_response: {
+      status: 0,
+      data: []
+    }
   },
   getters: {
-    getErrors(state) {
-      return state.errors;
+    getError(state) {
+      return state.error_response;
+    },
+
+    getErrorStatus(state) {
+      return state.error_response.status;
+    },
+
+    getErrorData(state) {
+      return state.error_response.data;
     }
   },
   mutations: {
-    ADD_ERROR(state, payload) {
-      state.errors.push(payload);
+    SET_ERROR(state, payload) {
+      if (payload.response) {
+        state.error_response.status = payload.response.status;
+
+        //parse response messages
+        if (payload.response.data) {
+          Object.values(payload.response.data).forEach(val => {
+            if (Array.isArray(val)) {
+              val.forEach(element => state.error_response.data.push(element));
+            } else {
+              state.error_response.data.push(val);
+            }
+          });
+        }
+      } else {
+        state.error_response.status = -1;
+        console.log(payload);
+      }
     },
-    CLEAR_ERRORS(state) {
-      state.errors = [];
+
+    CLEAR_ERROR(state) {
+      state.error_response.status = 0;
+      state.error_response.data = [];
     }
   },
-  actions: {
-    clear_errors({ commit }){
-      commit("CLEAR_ERRORS");
-    }
-  }
 })
