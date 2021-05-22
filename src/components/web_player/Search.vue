@@ -27,8 +27,7 @@
           <!--Search request in progress-->
           <template v-if="isLoading">
             <div class="loading_spinner__title">Searching...</div>
-            <div class="loading_spinner">
-            </div>
+            <div class="loading_spinner"></div>
           </template>
 
           <!--Some errors was occurred while search request-->
@@ -78,13 +77,13 @@
                         class="compilation__card-item__image compilation__card-item__profile-photo"
                       >
                         <img
-                          class="compilation__card-item__image-photo"
+                          class="compilation__item__image-photo"
                           :src="artist.photo || ''"
                           alt=""
                           onerror="this.style.display='none'"
                         />
                         <i
-                          class="far fa-user fa-5x compilation__card-item__image-plug"
+                          class="far fa-user fa-5x compilation__item__image-plug"
                         ></i>
                       </div>
 
@@ -104,30 +103,35 @@
                   <a href="" class="compilation__title__link">see all</a>
                 </div>
                 <div class="compilation__card-container">
-                  <div
+                  <router-link
                     v-for="profile in getSearchProfilesResults"
                     :key="profile"
-                    class="compilation__card-item"
+                    :to="{
+                      name: 'WebPlayerProfile',
+                      params: { id: profile.id },
+                    }"
                   >
-                    <div
-                      class="compilation__card-item__image compilation__card-item__profile-photo"
-                    >
-                      <img
-                        class="compilation__card-item__image-photo"
-                        :src="profile.photo || ''"
-                        alt=""
-                        onerror="this.style.display='none'"
-                      />
-                      <i
-                        class="far fa-user fa-5x compilation__card-item__image-plug"
-                      ></i>
-                    </div>
+                    <div class="compilation__card-item">
+                      <div
+                        class="compilation__card-item__image compilation__card-item__profile-photo"
+                      >
+                        <img
+                          class="compilation__item__image-photo"
+                          :src="profile.photo || ''"
+                          alt=""
+                          onerror="this.style.display='none'"
+                        />
+                        <i
+                          class="far fa-user fa-5x compilation__item__image-plug"
+                        ></i>
+                      </div>
 
-                    <div class="compilation__card-item__title">
-                      {{ profile.username }}
+                      <div class="compilation__card-item__title">
+                        {{ profile.username }}
+                      </div>
+                      <div class="compilation__card-item__autors">Profile</div>
                     </div>
-                    <div class="compilation__card-item__autors">Profile</div>
-                  </div>
+                  </router-link>
                 </div>
               </div>
 
@@ -145,13 +149,13 @@
                   >
                     <div class="compilation__card-item__image">
                       <img
-                        class="compilation__card-item__image-photo"
+                        class="compilation__item__image-photo"
                         :src="playlist.cover || ''"
                         alt=""
                         onerror="this.style.display='none'"
                       />
                       <i
-                        class="fas fa-music fa-5x compilation__card-item__image-plug"
+                        class="fas fa-music fa-5x compilation__item__image-plug"
                       ></i>
                     </div>
 
@@ -181,8 +185,17 @@
                       {{ index + 1 }}
                     </div>
                     <div class="compilation__list-item__block">
-                      <div class="compilation__list-item__cover">
-                        <span class="fas fa-compact-disc fa-lg"></span>
+                      <div class="compilation__list-item__image">
+                        <img
+                          class="compilation__item__image-photo"
+                          :src="song.cover || ''"
+                          alt=""
+                          onload="this.style.display='inline'"
+                          onerror="this.style.display='none'"
+                        />
+                        <i
+                          class="fas fa-compact-disc compilation__item__image-plug"
+                        ></i>
                       </div>
 
                       <div class="compilation__list-item__info">
@@ -236,6 +249,8 @@ export default {
     ...mapGetters({
       getError: "getError",
 
+      getProfile: "profile/getProfile",
+
       getSearchString: "search/getSearchString",
       getSearchArtistsResults: "search/getSearchArtistsResults",
       getSearchProfilesResults: "search/getSearchProfilesResults",
@@ -255,7 +270,7 @@ export default {
 
   methods: {
     ...mapActions({
-      search_action: "search/search_action",
+      searchAction: "search/searchAction",
     }),
 
     clearSearchString() {
@@ -267,9 +282,10 @@ export default {
         this.$store.commit("CLEAR_ERROR");
         this.isLoading = true;
 
-        await this.search_action({
+        await this.searchAction({
           api: this.$api,
           searchString: this.searchString,
+          accessToken: this.getProfile.accessToken
         });
 
         this.isLoading = false;
@@ -351,165 +367,5 @@ export default {
   100% {
     transform: rotate(360deg);
   }
-}
-
-.compilations_set {
-  margin-top: 25px;
-}
-
-.compilations_set__inner {
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-gap: 32px;
-}
-
-.compilation__title {
-  display: flex;
-  justify-content: space-between;
-  flex-direction: row;
-}
-
-.compilation__title__text {
-  font-size: 1.5rem;
-  font-weight: 600;
-}
-
-.compilation__title__link {
-  text-transform: uppercase;
-  font-weight: 500;
-  font-size: 0.8rem;
-}
-
-.compilation__title__link:hover {
-  text-decoration: underline;
-}
-
-.compilation__card-container {
-  overflow-y: hidden;
-  display: grid;
-  grid-gap: 24px;
-  grid-auto-rows: 0;
-  grid-template-rows: 1fr;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-}
-
-.compilation__card-item {
-  display: flex;
-  flex-direction: column;
-  margin-top: 24px;
-  padding: 16px;
-  background-color: #161616;
-  border-radius: 8px;
-  transition: background-color 0.3s;
-  overflow: hidden;
-}
-
-.compilation__card-item:hover {
-  cursor: pointer;
-  background-color: #262626;
-}
-
-.compilation__card-item__image {
-  position: relative;
-  width: 100%;
-  padding-bottom: 100%;
-  overflow: hidden;
-}
-
-.compilation__card-item__profile-photo {
-  border-radius: 50%;
-  overflow: hidden;
-}
-
-.compilation__card-item__image-photo {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border: 0px;
-  border-radius: 2px;
-  z-index: 5;
-}
-
-.compilation__card-item__image-plug {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: #161616;
-}
-
-.compilation__card-item__title {
-  font-size: 1.1rem;
-  margin-top: 15px;
-}
-
-.compilation__card-item__autors {
-  margin-top: 15px;
-  font-size: 0.8rem;
-  color: #b3b3b3;
-  text-overflow: ellipsis;
-}
-
-.compilation__list {
-  margin-top: 24px;
-  display: grid;
-  grid-template-columns: 1fr;
-}
-
-.compilation__list-item {
-  display: grid;
-  grid-template-columns: 16px 4fr 2fr minmax(120px, 1fr);
-  grid-gap: 12px;
-  padding: 8px 16px;
-  border-radius: 4px;
-}
-
-.compilation__list-item:hover {
-  background-color: #2d2d2d;
-}
-
-.compilation__list-item__block {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-}
-
-.compilation__list-item__info {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  margin: 0 14px;
-}
-
-.compilation__list-item__cover {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 56px;
-  height: 56px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-}
-
-.compilation__list-item__title {
-  font-size: 1rem;
-  line-height: 24px;
-}
-
-.compilation__list-item__autor {
-  font-size: 0.8rem;
-  line-height: 24px;
-  color: #b3b3b3;
-}
-
-.compilation__list-item__autor:hover {
-  color: #ffa1bd;
-  cursor: pointer;
-  text-decoration: underline;
 }
 </style>

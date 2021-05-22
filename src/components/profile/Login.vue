@@ -104,7 +104,7 @@ export default {
   },
   methods: {
     ...mapActions({
-      login_action: "profile/login_action",
+      loginAction: "profile/loginAction",
     }),
     /**
      * Sends request to Backend server to login user with POST method
@@ -117,7 +117,7 @@ export default {
       // clear all previous errors
       this.isLoading = true;
       this.$store.commit("CLEAR_ERROR");
-      const result = await this.login_action({
+      const result = await this.loginAction({
         api: this.$api,
         username: this.login_form.username,
         password: this.login_form.password,

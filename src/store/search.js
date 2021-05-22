@@ -79,9 +79,9 @@ export default {
         }
     },
     actions: {
-        async search_action({ commit }, { api, searchString }) {
+        async searchAction({ commit }, { api, searchString, accessToken }) {
             try {
-                const response = await api.search.search(searchString);
+                const response = await api.search.search(searchString, accessToken);
                 commit("SET_SEARCH_STRING", searchString);
                 commit("SET_SEARCH_RESULTS", response.data);
                 return true;

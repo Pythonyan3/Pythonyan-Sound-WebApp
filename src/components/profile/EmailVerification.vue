@@ -61,7 +61,7 @@ export default {
   },
   
   mounted() {
-    this.email_verify();
+    this.emailVerify();
   },
   /**
    * Clear errors from vuex storage before left
@@ -78,13 +78,13 @@ export default {
 
   methods: {
     ...mapActions({
-      email_verify_action: "profile/email_verify_action",
+      emailVerifyAction: "profile/emailVerifyAction",
       clear_errors: "clear_errors",
     }),
 
-    async email_verify() {
+    async emailVerify() {
       this.$store.commit("CLEAR_ERROR");
-      const result = await this.email_verify_action({
+      const result = await this.emailVerifyAction({
         api: this.$api,
         verify_token: this.$route.params.verify_token,
       });

@@ -108,12 +108,14 @@ export default {
 
   methods: {
     ...mapActions({
-      logout_action: "profile/logout_action",
+      logoutAction: "profile/logoutAction",
     }),
 
     async logout() {
-      this.logout_action({
+      this.logoutAction({
         api: this.$api,
+        accessToken: this.getProfile.accessToken,
+        refreshToken: this.getProfile.refreshToken
       });
     },
   },

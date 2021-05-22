@@ -6,48 +6,57 @@ import search from './search'
 export default createStore({
   modules: { profile, search },
   state: {
-    error_response: {
+    errorResponse: {
       status: 0,
       data: []
-    }
+    },
+    notificationMessage: ""
   },
   getters: {
     getError(state) {
-      return state.error_response;
+      return state.errorResponse;
     },
 
     getErrorStatus(state) {
-      return state.error_response.status;
+      return state.errorResponse.status;
     },
 
     getErrorData(state) {
-      return state.error_response.data;
+      return state.errorResponse.data;
+    },
+
+    getNotificationMessage(state) {
+      return state.notificationMessage;
     }
   },
   mutations: {
     SET_ERROR(state, payload) {
       if (payload.response) {
-        state.error_response.status = payload.response.status;
+        state.errorResponse.status = payload.response.status;
 
         //parse response messages
         if (payload.response.data) {
           Object.values(payload.response.data).forEach(val => {
             if (Array.isArray(val)) {
-              val.forEach(element => state.error_response.data.push(element));
+              val.forEach(element => state.errorResponse.data.push(element));
             } else {
-              state.error_response.data.push(val);
+              state.errorResponse.data.push(val);
             }
           });
         }
       } else {
-        state.error_response.status = -1;
+        state.errorResponse.status = -1;
         console.log(payload);
       }
     },
 
     CLEAR_ERROR(state) {
-      state.error_response.status = 0;
-      state.error_response.data = [];
+      state.errorResponse.status = 0;
+      state.errorResponse.data = [];
+    },
+
+    SET_NOTIFICATION_MESSAGE(state, payload) {
+      state.notificationMessage = payload;
     }
   },
 })

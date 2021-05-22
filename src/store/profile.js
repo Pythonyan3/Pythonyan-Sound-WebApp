@@ -13,8 +13,17 @@ export default {
     },
     mutations: {
         SET_PROFILE(state, payload) {
-            localStorage.setItem("profile", JSON.stringify(payload))
-            state.profile = payload;
+            state.profile = {
+                id: payload.id,
+                username: payload.username,
+                photo: payload.photo,
+                isArtist: payload.is_artist,
+                isVerified: payload.is_verified,
+                accessToken: payload.access,
+                refreshToken: payload.refresh
+            };
+            localStorage.setItem("profile", JSON.stringify(state.profile))
+            
         },
         CLEAR_PROFILE(state) {
             localStorage.removeItem("profile")
@@ -22,7 +31,7 @@ export default {
         }
     },
     actions: {
-        async login_action({ commit }, { api, ...payload }) {
+        async loginAction({ commit }, { api, ...payload }) {
             try {
                 const response = (await api.profile.login(payload));
                 commit("SET_PROFILE", response.data);
@@ -33,7 +42,7 @@ export default {
             }
         },
 
-        async signup_action({ commit }, { api, ...payload }) {
+        async signupAction({ commit }, { api, ...payload }) {
             try {
                 await api.profile.signup(payload);
                 return true;
@@ -43,13 +52,13 @@ export default {
             }
         },
 
-        async logout_action({ state, commit }, { api }) {
+        async logoutAction({ commit }, { api, accessToken, refreshToken }) {
             try {
                 await api.profile.logout(
                     { 
-                        refresh: state.profile.refresh 
+                        refresh: refreshToken
                     },
-                    state.profile.access
+                    accessToken
                 );
 
                 commit("CLEAR_PROFILE");
@@ -60,9 +69,9 @@ export default {
             }
         },
 
-        async email_verify_action({ state }, { api, verify_token }){
+        async emailVerifyAction({ state }, { api, verify_token }){
             try {
-                await api.profile.email_verify(
+                await api.profile.emailVerify(
                     { 
                         token: verify_token
                     }
@@ -76,13 +85,33 @@ export default {
             }
         },
 
-        async getProfileAction({ commit }, { api, profileId }) {
+        async getProfileInfoAction({ commit }, { api, profileId, accessToken }) {
             try {
-                return await api.profile.profile_info(profileId);
+                return await api.profile.getProfileInfo(profileId, accessToken);
             } catch (error) {
                 commit("SET_ERROR", error, { root: true });
                 return false;
             }
-        }
+        },
+
+        async followProfileAction({ commit }, { api, profileId, accessToken }) {
+            try {
+                await api.profile.followProfile(profileId, accessToken);
+                return true;
+            } catch (error) {
+                commit("SET_ERROR", error, { root: true });
+                return false;
+            }
+        },
+
+        async unfollowProfileAction({ commit }, { api, profileId, accessToken }) {
+            try {
+                await api.profile.unfollowProfile(profileId, accessToken);
+                return true;
+            } catch (error) {
+                commit("SET_ERROR", error, { root: true });
+                return false;
+            }
+        },
     }
 }

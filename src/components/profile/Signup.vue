@@ -142,14 +142,14 @@ export default {
 
   methods: {
     ...mapActions({
-      signup_action: "profile/signup_action",
+      signupAction: "profile/signupAction",
     }),
 
     async signup() {
       this.$store.commit("CLEAR_ERROR");
       this.isLoading = true;
 
-      const result = await this.signup_action({
+      const result = await this.signupAction({
         api: this.$api,
         username: this.signup_form.username,
         email: this.signup_form.email,

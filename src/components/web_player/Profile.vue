@@ -17,9 +17,8 @@
         <div v-else>
           <div class="profile-header">
             <div class="profile-header__photo">
-                
               <div v-if="isLoading" class="loading_spinner"></div>
-              
+
               <img
                 :src="profile.photo || ''"
                 class="profile-header__photo-image"
@@ -47,46 +46,107 @@
           </div>
 
           <div v-if="profile.username" class="profile-controls">
-            <div class="profile-controls__play">
+            <div v-if="profile.songs.length" class="profile-controls__play">
               <i class="fas fa-play"></i>
             </div>
-            <div v-if="profile.is_followed" class="profile-controls__unfollow">unfollow</div>
-            <div v-else class="profile-controls__follow">follow</div>
+            <template v-if="getProfile.id != profile.id">
+              <div
+                v-if="profile.is_followed"
+                @click="unfollowProfile($event.currentTarget)"
+                class="profile-controls__unfollow"
+              >
+                unfollow
+              </div>
+              <div
+                v-else
+                class="profile-controls__follow"
+                @click="followProfile($event.currentTarget)"
+              >
+                follow
+              </div>
+            </template>
+          </div>
+
+          <!--Songs-->
+          <div v-if="profile.songs.length" class="compilation">
+            <h2 class="compilation__title__text">Songs</h2>
+
+            <section class="compilation__list">
+              <div
+                v-for="(song, index) in profile.songs"
+                :key="`song-${index}`"
+                class="compilation__list-item"
+              >
+                <div class="compilation__list-item__block">
+                  {{ index + 1 }}
+                </div>
+                <div class="compilation__list-item__block">
+                  <div class="compilation__list-item__image">
+                    <img
+                      class="compilation__item__image-photo"
+                      :src="song.cover || ''"
+                      alt=""
+                      onload="this.style.display='inline'"
+                      onerror="this.style.display='none'"
+                    />
+                    <i
+                      class="fas fa-compact-disc compilation__item__image-plug"
+                    ></i>
+                  </div>
+
+                  <div class="compilation__list-item__info">
+                    <span class="compilation__list-item__title">
+                      {{ song.title }}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="compilation__list-item__block">
+                </div>
+
+                <div
+                  class="compilation__list-item__block compilation__list-item__menu"
+                >
+                  <i v-if="song.is_liked" class="fas fa-heart compilation__list-item__menu-item liked"></i>
+                  <i v-else class="far fa-heart compilation__list-item__menu-item"></i>
+                  <i
+                    class="fas fa-ellipsis-h compilation__list-item__menu-item"
+                  ></i>
+                </div>
+              </div>
+            </section>
           </div>
 
           <!-- Playlists -->
-              <div v-if="profile.playlists.length" class="compilation">
-                
-                <h2 class="compilation__title__text">Playlists</h2>
-                
-                <div class="compilation__card-container">
-                  <div
-                    v-for="playlist in profile.playlists"
-                    :key="playlist"
-                    class="compilation__card-item"
-                  >
-                    <div class="compilation__card-item__image">
-                      <img
-                        class="compilation__card-item__image-photo"
-                        :src="playlist.cover || ''"
-                        alt=""
-                        onerror="this.style.display='none'"
-                      />
-                      <i
-                        class="fas fa-music fa-5x compilation__card-item__image-plug"
-                      ></i>
-                    </div>
+          <div v-if="profile.playlists.length" class="compilation">
+            <h2 class="compilation__title__text">Playlists</h2>
 
-                    <div class="compilation__card-item__title">
-                      {{ playlist.title }}
-                    </div>
-                    <div class="compilation__card-item__autors">
-                      
-                    </div>
-                  </div>
+            <div class="compilation__card-container">
+              <div
+                v-for="playlist in profile.playlists"
+                :key="playlist"
+                class="compilation__card-item"
+              >
+                <div class="compilation__card-item__image">
+                  <img
+                    class="compilation__item__image-photo"
+                    :src="playlist.cover || ''"
+                    alt=""
+                    onload="this.style.display='inline'"
+                    onerror="this.style.display='none'"
+                  />
+                  <i
+                    class="fas fa-music fa-5x compilation__item__image-plug"
+                  ></i>
                 </div>
-              </div>
 
+                <div class="compilation__card-item__title">
+                  {{ playlist.title }}
+                </div>
+                <div class="compilation__card-item__autors"></div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -112,22 +172,25 @@ export default {
         photo: "",
         biography: "",
         playlists: [],
+        songs: [],
         is_artist: false,
         is_verified: false,
-        is_followed: false
+        is_followed: false,
       },
-      isLoading: false
+      isLoading: false,
+      isFollowing: false,
     };
   },
 
   computed: {
     ...mapGetters({
       getError: "getError",
+      getProfile: "profile/getProfile",
     }),
   },
 
   mounted() {
-    this.get_profile();
+    this.getProfileInfo();
   },
 
   unmounted() {
@@ -136,21 +199,76 @@ export default {
 
   methods: {
     ...mapActions({
-      getProfileAction: "profile/getProfileAction",
+      getProfileInfoAction: "profile/getProfileInfoAction",
+      followProfileAction: "profile/followProfileAction",
+      unfollowProfileAction: "profile/unfollowProfileAction",
     }),
-    async get_profile() {
+    async getProfileInfo() {
       this.isLoading = true;
-      
+
       this.profile = (
-        await this.getProfileAction({
+        await this.getProfileInfoAction({
           api: this.$api,
           profileId: this.$route.params.id,
+          accessToken: this.getProfile.accessToken,
         })
       ).data;
 
-      console.log(this.profile);
-
       this.isLoading = false;
+    },
+
+    async followProfile(element) {
+      if (!element.classList.contains("disabled")) {
+        element.classList.add("disabled");
+
+        const result = await this.followProfileAction({
+          api: this.$api,
+          profileId: this.profile.id,
+          accessToken: this.getProfile.accessToken,
+        });
+
+        if (result) {
+          this.profile.is_followed = true;
+          this.$store.commit(
+            "SET_NOTIFICATION_MESSAGE",
+            "Saved to Your Library"
+          );
+        } else {
+          this.$store.commit(
+            "SET_NOTIFICATION_MESSAGE",
+            "Couldn't Save to Your Library"
+          );
+        }
+
+        element.classList.remove("disabled");
+      }
+    },
+
+    async unfollowProfile(element) {
+      if (!element.classList.contains("disabled")) {
+        element.classList.add("disabled");
+
+        const result = await this.unfollowProfileAction({
+          api: this.$api,
+          profileId: this.profile.id,
+          accessToken: this.getProfile.accessToken,
+        });
+
+        if (result) {
+          this.profile.is_followed = false;
+          this.$store.commit(
+            "SET_NOTIFICATION_MESSAGE",
+            "Removed from Your Library"
+          );
+        } else {
+          this.$store.commit(
+            "SET_NOTIFICATION_MESSAGE",
+            "Couldn't Remove from Your Library"
+          );
+        }
+
+        element.classList.remove("disabled");
+      }
     },
   },
 };
@@ -162,7 +280,6 @@ export default {
   display: flex;
   justify-content: flex-start;
   align-items: flex-end;
-  margin-top: 25px;
 }
 
 .loading_spinner {
@@ -257,12 +374,18 @@ export default {
   background-color: #ffa1bd;
 }
 
-.profile-controls__follow, .profile-controls__unfollow {
+.profile-controls__follow,
+.profile-controls__unfollow {
   padding: 7px 15px;
   border: 1px solid white;
   text-transform: uppercase;
   cursor: pointer;
   transition: 0.1s;
+}
+
+.disabled {
+  color: grey;
+  border: 1px solid grey;
 }
 
 .profile-controls__unfollow {
@@ -271,96 +394,5 @@ export default {
 
 .profile-controls__follow:hover {
   border: 1px solid #ffa1bd;
-}
-
-.compilation {
-  margin: 50px 0;
-}
-
-.compilation__title__text {  
-  font-size: 1.5rem;
-  font-weight: 600;
-}
-
-.compilation__title__link {
-  text-transform: uppercase;
-  font-weight: 500;
-  font-size: 0.8rem;
-}
-
-.compilation__title__link:hover {
-  text-decoration: underline;
-}
-
-.compilation__card-container {
-  overflow-y: hidden;
-  display: grid;
-  grid-gap: 24px;
-  grid-auto-rows: auto;
-  grid-template-rows: 1fr;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-}
-
-.compilation__card-item {
-  display: flex;
-  flex-direction: column;
-  margin-top: 24px;
-  padding: 16px;
-  background-color: #161616;
-  border-radius: 8px;
-  transition: background-color 0.3s;
-  overflow: hidden;
-}
-
-.compilation__card-item:hover {
-  cursor: pointer;
-  background-color: #262626;
-}
-
-.compilation__card-item__image {
-  position: relative;
-  width: 100%;
-  padding-bottom: 100%;
-  overflow: hidden;
-}
-
-.compilation__card-item__profile-photo {
-  border-radius: 50%;
-  overflow: hidden;
-}
-
-.compilation__card-item__image-photo {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border: 0px;
-  border-radius: 2px;
-  z-index: 5;
-}
-
-.compilation__card-item__image-plug {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: #161616;
-}
-
-.compilation__card-item__title {
-  font-size: 1.1rem;
-  margin-top: 15px;
-}
-
-.compilation__card-item__autors {
-  margin-top: 15px;
-  font-size: 0.8rem;
-  color: #b3b3b3;
-  text-overflow: ellipsis;
 }
 </style>

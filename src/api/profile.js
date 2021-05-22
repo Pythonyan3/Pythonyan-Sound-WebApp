@@ -25,10 +25,10 @@ export default function (axios_instance) {
          * @param {string}} access_token - contains token to Authorization header
          * @returns axios promise response
          */
-        logout(payload, access_token) {
+        logout(payload, accessToken) {
             return axios_instance.delete("profile/logout/", {
                 headers: {
-                    'Authorization': `Bearer ${access_token}`
+                    'Authorization': `Bearer ${accessToken}`
                 },
                 data: payload
             })
@@ -39,14 +39,30 @@ export default function (axios_instance) {
          * @param {*} payload - request body data
          * @returns axios promise response
          */
-        email_verify(payload){
+        emailVerify(payload){
             return axios_instance.post("profile/registration/email-verify/", payload);
         },
 
-        profile_info(payload) {
+        getProfileInfo(payload, accessToken) {
             return axios_instance.get(`profile/${payload}/`, {
                 headers: {
-                    'Authorization': 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjIxNjgzMTg4LCJqdGkiOiI5MGRlNzczMzM2Nzc0YTQwYjkzZGU1MWM0YWMzYTlhZCIsInVzZXJfaWQiOjF9.dXLjJj_bBP3odx4X3r4aneuScgh8lKec0rMUBzY2lw4'
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            });
+        },
+
+        followProfile(payload, accessToken) {
+            return axios_instance.post(`profile/followings/${payload}/`, {}, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            });
+        },
+
+        unfollowProfile(payload, accessToken) {
+            return axios_instance.delete(`profile/followings/${payload}/`, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`
                 }
             });
         }

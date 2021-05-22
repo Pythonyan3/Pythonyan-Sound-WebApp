@@ -1,5 +1,10 @@
 <template>
   <div class="grid__wrapper">
+    
+    <div ref="notification" class="notification">
+      
+    </div>
+
     <div class="nav__bar">
       <router-link :to="{ name: 'WebPlayer' }">
         <div class="nav__logo">
@@ -62,7 +67,7 @@
               <div class="user__bar__icon">
                 <i class="far fa-user"></i>
               </div>
-              <div class="user__bar__name">Pythonyan3</div>
+              <div v-if="getProfile" class="user__bar__name">{{ getProfile.username }}</div>
               <div class="fas fa-caret-down caret__down__icon"></div>
             </div>
           </div>
@@ -123,8 +128,49 @@
 </template>
 
 <script>
+import { mapGetters, mapActions } from "vuex";
+
 export default {
   name: "WebPlayer",
+
+  data() {
+    return {
+      timerId: null
+    }
+  },
+
+  computed: {
+    ...mapGetters({
+      getProfile: "profile/getProfile",
+      getNotificationMessage: "getNotificationMessage",
+    }),
+  },
+
+  mounted() {
+    if (!this.getProfile) {
+      this.$router.replace({ name: "Main" });
+    }
+  },
+
+  watch: {
+    getNotificationMessage:  function () {
+      if (this.timerId){
+        clearTimeout(this.timerId);
+        this.timerId = null;
+      }
+      this.$refs.notification.innerHTML = this.getNotificationMessage;
+      this.$refs.notification.style.opacity = 1;
+      this.timerId = setTimeout(() => {
+        this.$refs.notification.style.opacity = 0;
+      }, 5000)
+    }
+  },
+
+  methods: {
+    ...mapActions({
+      
+    }),
+  }
 };
 </script>
 
@@ -150,6 +196,7 @@ a {
 }
 
 .grid__wrapper {
+  position: relative;
   display: grid;
   height: 100vh;
   width: 100%;
@@ -158,6 +205,24 @@ a {
   grid-template-areas:
     "nav__bar       main__view"
     "player__bar player__bar";
+}
+
+.notification {
+  position: absolute;
+  max-width: 500px;
+  max-height: calc(100% - 108px);
+  bottom: 108px;
+  left: 50%;
+  padding: 15px 35px;
+  border: 1px solid #ffa1bd;
+  border-radius: 5px;
+  background-color: #2d2d2d;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  text-overflow: ellipsis;
+  opacity: 0;
+  transition: 0.5s;
+  transform: translateX(-50%);
+  z-index: 10;
 }
 
 /*Navigation Bar*/
@@ -247,7 +312,7 @@ a {
 
 ::v-deep(.container) {
   width: 100%;
-  padding: 0 30px;
+  padding: 0 30px 25px 30px;
 }
 
 /*Main View Header*/
@@ -298,6 +363,188 @@ a {
 
 .caret__down__icon {
   margin-right: 8px;
+}
+
+/* Main View Content */
+
+::v-deep(.compilations_set__inner) {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+::v-deep(.compilation) {
+  margin-top: 50px;
+}
+
+::v-deep(.compilation__title) {
+  display: flex;
+  justify-content: space-between;
+  flex-direction: row;
+}
+
+::v-deep(.compilation__title__text) {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+::v-deep(.compilation__title__link) {
+  text-transform: uppercase;
+  font-weight: 500;
+  font-size: 0.8rem;
+}
+
+::v-deep(.compilation__title__link:hover) {
+  text-decoration: underline;
+}
+
+::v-deep(.compilation__card-container) {
+  overflow-y: hidden;
+  display: grid;
+  grid-gap: 24px;
+  grid-auto-rows: auto;
+  grid-template-rows: 1fr;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+::v-deep(.compilation__card-item) {
+  display: flex;
+  flex-direction: column;
+  margin-top: 24px;
+  padding: 16px;
+  background-color: #161616;
+  border-radius: 8px;
+  transition: background-color 0.3s;
+  overflow: hidden;
+}
+
+::v-deep(.compilation__card-item:hover) {
+  cursor: pointer;
+  background-color: #262626;
+}
+
+::v-deep(.compilation__card-item__image) {
+  position: relative;
+  width: 100%;
+  padding-bottom: 100%;
+  overflow: hidden;
+}
+
+::v-deep(.compilation__card-item__profile-photo) {
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+::v-deep(.compilation__item__image-photo) {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0px;
+  border-radius: 2px;
+  z-index: 5;
+}
+
+::v-deep(.compilation__item__image-plug) {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #161616;
+}
+
+::v-deep(.compilation__card-item__title) {
+  font-size: 1.1rem;
+  margin-top: 15px;
+}
+
+::v-deep(.compilation__card-item__autors) {
+  margin-top: 15px;
+  font-size: 0.8rem;
+  color: #b3b3b3;
+  text-overflow: ellipsis;
+}
+
+::v-deep(.compilation__list) {
+  margin-top: 24px;
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+::v-deep(.compilation__list-item) {
+  display: grid;
+  grid-template-columns: 16px 4fr 2fr minmax(120px, 1fr);
+  grid-gap: 12px;
+  padding: 8px 16px;
+  border-radius: 4px;
+}
+
+::v-deep(.compilation__list-item:hover) {
+  background-color: #2d2d2d;
+}
+
+::v-deep(.compilation__list-item:hover .compilation__list-item__menu-item) {
+  opacity: 1;
+}
+
+::v-deep(.liked) {
+  opacity: 1;
+  color: #ffa1bd;
+}
+
+::v-deep(.compilation__list-item__block) {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+::v-deep(.compilation__list-item__info) {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin: 0 14px;
+}
+
+::v-deep(.compilation__list-item__image) {
+  position: relative;
+  width: 56px;
+  height: 56px;
+}
+
+::v-deep(.compilation__list-item__title) {
+  font-size: 1rem;
+  line-height: 24px;
+}
+
+::v-deep(.compilation__list-item__autor) {
+  font-size: 0.8rem;
+  line-height: 24px;
+  color: #b3b3b3;
+}
+
+::v-deep(.compilation__list-item__autor:hover) {
+  color: #ffa1bd;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+::v-deep(.compilation__list-item__menu) {
+  justify-content: center;
+}
+
+::v-deep(.compilation__list-item__menu-item) {
+  opacity: 0;
+  margin-right: 15px;
+  cursor: pointer;
+  transition: 0.1s;
+}
+
+::v-deep(.compilation__list-item__menu-item:hover) {
+  color: #ffa1bd;
 }
 
 /*Player Bar*/
