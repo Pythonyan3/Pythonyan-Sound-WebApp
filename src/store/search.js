@@ -79,14 +79,14 @@ export default {
         }
     },
     actions: {
-        async searchAction({ commit }, { api, searchString, accessToken }) {
+        async searchAction({ commit }, { api, searchString, componentName, accessToken }) {
             try {
                 const response = await api.search.search(searchString, accessToken);
                 commit("SET_SEARCH_STRING", searchString);
                 commit("SET_SEARCH_RESULTS", response.data);
                 return true;
             } catch (error) {
-                commit("SET_ERROR", error, { root: true });
+                commit("SET_ERROR", { error: error, fromComponentName: componentName }, { root: true });
                 return false;
             }
         },

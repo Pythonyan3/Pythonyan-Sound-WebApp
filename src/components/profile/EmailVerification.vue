@@ -7,18 +7,7 @@
             Email address confirmation, please wait...
           </div>
           <div class="loading_spinner">
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
-            <div></div>
+            
           </div>
         </template>
 
@@ -79,13 +68,13 @@ export default {
   methods: {
     ...mapActions({
       emailVerifyAction: "profile/emailVerifyAction",
-      clear_errors: "clear_errors",
     }),
 
     async emailVerify() {
       this.$store.commit("CLEAR_ERROR");
       const result = await this.emailVerifyAction({
         api: this.$api,
+        componentName: this.$options.name,
         verify_token: this.$route.params.verify_token,
       });
 

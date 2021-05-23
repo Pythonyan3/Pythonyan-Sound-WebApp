@@ -1,14 +1,17 @@
 import { createStore } from 'vuex'
+import playlists from './playlists'
 import profile from './profile'
 import search from './search'
+import songs from './songs'
 
 
 export default createStore({
-  modules: { profile, search },
+  modules: { playlists, profile, search, songs },
   state: {
     errorResponse: {
       status: 0,
-      data: []
+      data: [],
+      fromComponentName: ""
     },
     notificationMessage: ""
   },
@@ -25,18 +28,24 @@ export default createStore({
       return state.errorResponse.data;
     },
 
+    getFromComponentName(state) {
+      return state.errorResponse.fromComponentName;
+    },
+
     getNotificationMessage(state) {
       return state.notificationMessage;
     }
   },
   mutations: {
-    SET_ERROR(state, payload) {
-      if (payload.response) {
-        state.errorResponse.status = payload.response.status;
+    SET_ERROR(state, { error, fromComponentName }) {
+      state.errorResponse.fromComponentName = fromComponentName;
+
+      if (error.response) {
+        state.errorResponse.status = error.response.status;
 
         //parse response messages
-        if (payload.response.data) {
-          Object.values(payload.response.data).forEach(val => {
+        if (error.response.data) {
+          Object.values(error.response.data).forEach(val => {
             if (Array.isArray(val)) {
               val.forEach(element => state.errorResponse.data.push(element));
             } else {
@@ -46,17 +55,21 @@ export default createStore({
         }
       } else {
         state.errorResponse.status = -1;
-        console.log(payload);
       }
     },
 
     CLEAR_ERROR(state) {
       state.errorResponse.status = 0;
       state.errorResponse.data = [];
+      state.errorResponse.fromComponentName = "";
     },
 
     SET_NOTIFICATION_MESSAGE(state, payload) {
       state.notificationMessage = payload;
+    },
+
+    CLEAR_NOTIFICATION_MESSAGE(state) {
+      state.notificationMessage = "";
     }
   },
 })

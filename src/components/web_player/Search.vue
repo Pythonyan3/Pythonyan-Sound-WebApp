@@ -31,7 +31,13 @@
           </template>
 
           <!--Some errors was occurred while search request-->
-          <template v-else-if="getError.status && getError.data">
+          <template
+            v-else-if="
+              getError.fromComponentName == $options.name &&
+              getError.status &&
+              getError.data
+            "
+          >
             <ErrorsPlug
               title="Some error was occurred while search"
               message="Please try to search again or back for it later."
@@ -57,159 +63,31 @@
             <!--Search returned some data-->
             <template v-else>
               <!--Artists-->
-              <div v-if="getSearchArtistsResults.length" class="compilation">
-                <div class="compilation__title">
-                  <h2 class="compilation__title__text">Artists</h2>
-                  <a href="" class="compilation__title__link">see all</a>
-                </div>
-
-                <div class="compilation__card-container">
-                  <router-link
-                    v-for="artist in getSearchArtistsResults"
-                    :key="artist"
-                    :to="{
-                      name: 'WebPlayerProfile',
-                      params: { id: artist.id },
-                    }"
-                  >
-                    <div class="compilation__card-item">
-                      <div
-                        class="compilation__card-item__image compilation__card-item__profile-photo"
-                      >
-                        <img
-                          class="compilation__item__image-photo"
-                          :src="artist.photo || ''"
-                          alt=""
-                          onerror="this.style.display='none'"
-                        />
-                        <i
-                          class="far fa-user fa-5x compilation__item__image-plug"
-                        ></i>
-                      </div>
-
-                      <div class="compilation__card-item__title">
-                        {{ artist.username }}
-                      </div>
-                      <div class="compilation__card-item__autors">Artist</div>
-                    </div>
-                  </router-link>
-                </div>
-              </div>
+              <ProfilesPlaylistsCards
+                v-if="getSearchArtistsResults.length"
+                :isPreview="true"
+                :profiles="sliceSearchResults(getSearchArtistsResults)"
+                title="Artists"
+              />
 
               <!--Profiles-->
-              <div v-if="getSearchProfilesResults.length" class="compilation">
-                <div class="compilation__title">
-                  <h2 class="compilation__title__text">Profiles</h2>
-                  <a href="" class="compilation__title__link">see all</a>
-                </div>
-                <div class="compilation__card-container">
-                  <router-link
-                    v-for="profile in getSearchProfilesResults"
-                    :key="profile"
-                    :to="{
-                      name: 'WebPlayerProfile',
-                      params: { id: profile.id },
-                    }"
-                  >
-                    <div class="compilation__card-item">
-                      <div
-                        class="compilation__card-item__image compilation__card-item__profile-photo"
-                      >
-                        <img
-                          class="compilation__item__image-photo"
-                          :src="profile.photo || ''"
-                          alt=""
-                          onerror="this.style.display='none'"
-                        />
-                        <i
-                          class="far fa-user fa-5x compilation__item__image-plug"
-                        ></i>
-                      </div>
-
-                      <div class="compilation__card-item__title">
-                        {{ profile.username }}
-                      </div>
-                      <div class="compilation__card-item__autors">Profile</div>
-                    </div>
-                  </router-link>
-                </div>
-              </div>
+              <ProfilesPlaylistsCards
+                v-if="getSearchProfilesResults.length"
+                :isPreview="true"
+                :profiles="sliceSearchResults(getSearchProfilesResults)"
+                title="Profiles"
+              />
 
               <!-- Playlists -->
-              <div v-if="getSearchPlaylistsResults.length" class="compilation">
-                <div class="compilation__title">
-                  <h2 class="compilation__title__text">Playlists</h2>
-                  <a href="" class="compilation__title__link">see all</a>
-                </div>
-                <div class="compilation__card-container">
-                  <div
-                    v-for="playlist in getSearchPlaylistsResults"
-                    :key="playlist"
-                    class="compilation__card-item"
-                  >
-                    <div class="compilation__card-item__image">
-                      <img
-                        class="compilation__item__image-photo"
-                        :src="playlist.cover || ''"
-                        alt=""
-                        onerror="this.style.display='none'"
-                      />
-                      <i
-                        class="fas fa-music fa-5x compilation__item__image-plug"
-                      ></i>
-                    </div>
-
-                    <div class="compilation__card-item__title">
-                      {{ playlist.title }}
-                    </div>
-                    <div class="compilation__card-item__autors">
-                      By {{ playlist.owner.username }}
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <ProfilesPlaylistsCards
+                v-if="getSearchPlaylistsResults.length"
+                :isPreview="true"
+                :playlists="sliceSearchResults(getSearchPlaylistsResults)"
+                title="Playlists"
+              />
 
               <!--Songs-->
-              <div v-if="getSearchSongsResults.length" class="compilation">
-                <div class="compilation__title">
-                  <h2 class="compilation__title__text">Songs</h2>
-                  <a href="" class="compilation__title__link">see all</a>
-                </div>
-                <section class="compilation__list">
-                  <div
-                    v-for="(song, index) in getSearchSongsResults"
-                    :key="`song-${index}`"
-                    class="compilation__list-item"
-                  >
-                    <div class="compilation__list-item__block">
-                      {{ index + 1 }}
-                    </div>
-                    <div class="compilation__list-item__block">
-                      <div class="compilation__list-item__image">
-                        <img
-                          class="compilation__item__image-photo"
-                          :src="song.cover || ''"
-                          alt=""
-                          onload="this.style.display='inline'"
-                          onerror="this.style.display='none'"
-                        />
-                        <i
-                          class="fas fa-compact-disc compilation__item__image-plug"
-                        ></i>
-                      </div>
-
-                      <div class="compilation__list-item__info">
-                        <span class="compilation__list-item__title">
-                          {{ song.title }}
-                        </span>
-                        <span class="compilation__list-item__autor">
-                          {{ song.artist.username }}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-              </div>
+              <SongsList :songs="sliceSearchResults(getSearchSongsResults)" />
             </template>
           </template>
         </template>
@@ -226,6 +104,8 @@
 
 <script>
 import ErrorsPlug from "./ErrorsPlug.vue";
+import ProfilesPlaylistsCards from "./ProfilesPlaylistsCards.vue";
+import SongsList from "./SongsList.vue";
 import { mapGetters, mapActions } from "vuex";
 
 export default {
@@ -233,6 +113,8 @@ export default {
 
   components: {
     ErrorsPlug,
+    SongsList,
+    ProfilesPlaylistsCards,
   },
 
   data() {
@@ -273,6 +155,14 @@ export default {
       searchAction: "search/searchAction",
     }),
 
+    sliceSearchResults(results) {
+      if (results.length > 10) {
+        return results.slice(0, 10);
+      } else {
+        return results;
+      }
+    },
+
     clearSearchString() {
       this.$store.commit("search/CLEAR_SEARCH_STRING");
     },
@@ -285,7 +175,8 @@ export default {
         await this.searchAction({
           api: this.$api,
           searchString: this.searchString,
-          accessToken: this.getProfile.accessToken
+          accessToken: this.getProfile.accessToken,
+          componentName: this.$options.name,
         });
 
         this.isLoading = false;
@@ -301,10 +192,11 @@ export default {
 
 .search__form {
   position: absolute;
-  top: 20px;
+  top: 10px;
   left: 30px;
   height: 40px;
   width: 364px;
+  z-index: 4;
 }
 
 .search__form__icon {

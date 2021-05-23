@@ -23,7 +23,7 @@ export default {
                 refreshToken: payload.refresh
             };
             localStorage.setItem("profile", JSON.stringify(state.profile))
-            
+
         },
         CLEAR_PROFILE(state) {
             localStorage.removeItem("profile")
@@ -31,31 +31,31 @@ export default {
         }
     },
     actions: {
-        async loginAction({ commit }, { api, ...payload }) {
+        async loginAction({ commit }, { api, componentName, ...payload }) {
             try {
                 const response = (await api.profile.login(payload));
                 commit("SET_PROFILE", response.data);
                 return true;
             } catch (error) {
-                commit("SET_ERROR", error, { root: true })
+                commit("SET_ERROR", { error: error, fromComponentName: componentName }, { root: true })
                 return false;
             }
         },
 
-        async signupAction({ commit }, { api, ...payload }) {
+        async signupAction({ commit }, { api, componentName, ...payload }) {
             try {
                 await api.profile.signup(payload);
                 return true;
             } catch (error) {
-                commit("SET_ERROR", error, { root: true })
+                commit("SET_ERROR", { error: error, fromComponentName: componentName }, { root: true })
                 return false
             }
         },
 
-        async logoutAction({ commit }, { api, accessToken, refreshToken }) {
+        async logoutAction({ commit }, { api, componentName, accessToken, refreshToken }) {
             try {
                 await api.profile.logout(
-                    { 
+                    {
                         refresh: refreshToken
                     },
                     accessToken
@@ -64,19 +64,19 @@ export default {
                 commit("CLEAR_PROFILE");
                 return true;
             } catch (error) {
-                commit("SET_ERROR", error, { root: true });
+                commit("SET_ERROR", { error: error, fromComponentName: componentName }, { root: true });
                 return false;
             }
         },
 
-        async emailVerifyAction({ state }, { api, verify_token }){
+        async emailVerifyAction({ state }, { api, verify_token }) {
             try {
                 await api.profile.emailVerify(
-                    { 
+                    {
                         token: verify_token
                     }
                 );
-                if (state.profile){
+                if (state.profile) {
                     state.profile.is_verified = true;
                 }
                 return true;
@@ -85,31 +85,11 @@ export default {
             }
         },
 
-        async getProfileInfoAction({ commit }, { api, profileId, accessToken }) {
+        async getProfileInfoAction({ commit }, { api, profileId, componentName, accessToken }) {
             try {
                 return await api.profile.getProfileInfo(profileId, accessToken);
             } catch (error) {
-                commit("SET_ERROR", error, { root: true });
-                return false;
-            }
-        },
-
-        async followProfileAction({ commit }, { api, profileId, accessToken }) {
-            try {
-                await api.profile.followProfile(profileId, accessToken);
-                return true;
-            } catch (error) {
-                commit("SET_ERROR", error, { root: true });
-                return false;
-            }
-        },
-
-        async unfollowProfileAction({ commit }, { api, profileId, accessToken }) {
-            try {
-                await api.profile.unfollowProfile(profileId, accessToken);
-                return true;
-            } catch (error) {
-                commit("SET_ERROR", error, { root: true });
+                commit("SET_ERROR", { error: error, fromComponentName: componentName }, { root: true });
                 return false;
             }
         },

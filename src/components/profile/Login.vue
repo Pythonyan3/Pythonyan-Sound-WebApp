@@ -3,9 +3,16 @@
     <div class="container">
       <div class="login__section__inner">
         <form @submit.prevent="login" class="login__form" action="">
-          <div class="section__text">To continue, log in to Pythonyan Sound.</div>
+          <div class="section__text">
+            To continue, log in to Pythonyan Sound.
+          </div>
 
-          <ErrorMessages />
+          <ErrorMessages
+            v-if="
+              getError.fromComponentName == $options.name &&
+              getError.data.length
+            "
+          />
 
           <div class="input__block">
             <label class="label__item">Enter username or email address</label>
@@ -31,20 +38,7 @@
           </div>
 
           <div class="input__block submit__block">
-            <div v-if="isLoading" class="loading_spinner">
-              <div></div>
-              <div></div>
-              <div></div>
-              <div></div>
-              <div></div>
-              <div></div>
-              <div></div>
-              <div></div>
-              <div></div>
-              <div></div>
-              <div></div>
-              <div></div>
-            </div>
+            <div v-if="isLoading" class="loading_spinner"></div>
             <input v-else class="submit__login" type="submit" value="log in" />
           </div>
 
@@ -62,14 +56,14 @@
 </template>
 
 <script>
-import ErrorMessages from "./ErrorMessages.vue"
+import ErrorMessages from "./ErrorMessages.vue";
 import { mapGetters, mapActions } from "vuex";
 
 export default {
   name: "Login",
-  
+
   components: {
-    ErrorMessages
+    ErrorMessages,
   },
 
   data() {
@@ -84,6 +78,8 @@ export default {
   computed: {
     ...mapGetters({
       getProfile: "profile/getProfile",
+
+      getError: "getError",
     }),
   },
 
@@ -121,6 +117,7 @@ export default {
         api: this.$api,
         username: this.login_form.username,
         password: this.login_form.password,
+        componentName: this.$options.name,
       });
       this.isLoading = false;
       if (result) {
@@ -198,7 +195,7 @@ input:focus {
   margin-top: 25px;
 }
 
-.loading_spinner{
+.loading_spinner {
   position: relative;
   min-width: 160px;
   min-height: 55px;
@@ -267,5 +264,4 @@ input:focus {
   color: white;
   background-color: #616467;
 }
-
 </style>

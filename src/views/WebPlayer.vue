@@ -1,61 +1,109 @@
 <template>
   <div class="grid__wrapper">
-    
-    <div ref="notification" class="notification">
-      
+    <div ref="notification" class="notification"></div>
+
+    <div
+      ref="createPlaylist"
+      class="create-playlist"
+      @click.self="$refs.createPlaylist.style.display = 'none'"
+    >
+      <div class="create-playlist__form">
+        <i
+          class="fas fa-times create-playlist__form-close"
+          @click.self="$refs.createPlaylist.style.display = 'none'"
+        ></i>
+
+        <form @submit.prevent="createPlaylist">
+          <h2 class="create-playlist__form-title">Create Your New Playlist</h2>
+
+          <div class="input__block">
+            <label class="label__item">Enter a playlist title</label>
+            <input
+              v-model="playlistTitle"
+              class="input__item"
+              type="text"
+              placeholder="Playlist title"
+              minlength="4"
+              required
+            />
+          </div>
+
+          <div class="input__block submit__block">
+            <div v-if="isLoading" class="loading_spinner"></div>
+            <input v-else class="submit__create" type="submit" value="create" />
+          </div>
+        </form>
+      </div>
     </div>
 
-    <div class="nav__bar">
-      <router-link :to="{ name: 'WebPlayer' }">
-        <div class="nav__logo">
+    <div class="nav-bar">
+      <router-link :to="{ name: 'Main' }">
+        <div class="nav-bar__logo">
           <img
-            class="nav__logo__icon"
+            class="nav-bar__logo-icon"
             src="../assets/images/snake_logo.png"
             alt=""
           />
-          <span class="nav__logo__title">PythonyanSound</span>
+          <span class="nav-bar__logo__title">PythonyanSound</span>
         </div>
       </router-link>
 
-      <div class="nav__menu">
+      <div class="nav-bar__menu">
         <router-link :to="{ name: 'WebPlayer' }">
-          <div class="nav__bar__item">
-            <span class="fas fa-home fa-lg"></span>
-            <span>Home</span>
+          <div class="nav-bar__block-item">
+            <span class="fas fa-home fa-lg nav-bar__block-item__icon"></span>
+            <span class="nav-bar__block-item__text">Home</span>
           </div>
         </router-link>
 
         <router-link :to="{ name: 'WebPlayerSearch' }">
-          <div class="nav__bar__item">
-            <span class="fas fa-search fa-lg"></span>
-            <span>Search</span>
+          <div class="nav-bar__block-item">
+            <span class="fas fa-search nav-bar__block-item__icon"></span>
+            <span class="nav-bar__block-item__text">Search</span>
           </div>
         </router-link>
 
         <a href="">
-          <div class="nav__bar__item">
-            <span class="fas fa-compact-disc fa-lg"></span>
-            <span>Your Library</span>
+          <div class="nav-bar__block-item">
+            <span class="fas fa-compact-disc nav-bar__block-item__icon"></span>
+            <span class="nav-bar__block-item__text">Your Library</span>
           </div>
         </a>
       </div>
 
-      <div class="add__playlists">
-        <div class="playlists_add_title">Playlists</div>
+      <div class="nav-bar__block">
+        <div class="nav-bar__block-title">Playlists</div>
 
-        <a href="">
-          <div class="nav__bar__item">
-            <span class="fas fa-compact-disc fa-plus-square fa-lg"></span>
-            <span>Create Playlist</span>
-          </div>
-        </a>
+        <div
+          class="nav-bar__block-item"
+          @click="$refs.createPlaylist.style.display = 'flex'"
+        >
+          <span
+            class="fas fa-compact-disc fa-plus-square fa-lg nav-bar__block-item__icon"
+          ></span>
+          <span class="nav-bar__block-item__text">Create Playlist</span>
+        </div>
 
-        <a href="">
-          <div class="nav__bar__item">
-            <span class="fas fa-heart fa-lg"></span>
-            <span>Liked Songs</span>
+        <div>
+          <div class="nav-bar__block-item">
+            <span class="fas fa-heart nav-bar__block-item__icon"></span>
+            <span class="nav-bar__block-item__text">Liked Songs</span>
           </div>
-        </a>
+        </div>
+      </div>
+
+      <div class="nav-bar__block">
+        <hr class="nav-bar__block-divider" />
+
+        <template v-if="getProfilePlaylists.length">
+          <a v-for="playlist in getProfilePlaylists" :key="playlist" href="">
+            <div class="nav-bar__block-item">
+              <span class="nav-bar__block-item__text">{{
+                playlist.title
+              }}</span>
+            </div>
+          </a>
+        </template>
       </div>
     </div>
 
@@ -67,7 +115,9 @@
               <div class="user__bar__icon">
                 <i class="far fa-user"></i>
               </div>
-              <div v-if="getProfile" class="user__bar__name">{{ getProfile.username }}</div>
+              <div v-if="getProfile" class="user__bar__name">
+                {{ getProfile.username }}
+              </div>
               <div class="fas fa-caret-down caret__down__icon"></div>
             </div>
           </div>
@@ -135,13 +185,18 @@ export default {
 
   data() {
     return {
-      timerId: null
-    }
+      timerId: null,
+      isLoading: false,
+      playlistTitle: ""
+    };
   },
 
   computed: {
     ...mapGetters({
       getProfile: "profile/getProfile",
+
+      getProfilePlaylists: "playlists/getProfilePlaylists",
+
       getNotificationMessage: "getNotificationMessage",
     }),
   },
@@ -149,28 +204,61 @@ export default {
   mounted() {
     if (!this.getProfile) {
       this.$router.replace({ name: "Main" });
+    } else {
+      this.getProfilePlaylistsAction({
+        api: this.$api,
+        componentName: this.$options.name,
+        accessToken: this.getProfile.accessToken,
+      });
     }
   },
 
+  unmounted() {
+    this.$store.commit("CLEAR_ERROR");
+  },
+
   watch: {
-    getNotificationMessage:  function () {
-      if (this.timerId){
-        clearTimeout(this.timerId);
-        this.timerId = null;
+    getNotificationMessage: function () {
+      if (this.getNotificationMessage) {
+        if (this.timerId) {
+          clearTimeout(this.timerId);
+          this.timerId = null;
+        }
+        this.$refs.notification.innerHTML = this.getNotificationMessage;
+        this.$refs.notification.style.opacity = 1;
+        this.timerId = setTimeout(() => {
+          this.$refs.notification.style.opacity = 0;
+          this.$store.commit("CLEAR_NOTIFICATION_MESSAGE");
+        }, 5000);
       }
-      this.$refs.notification.innerHTML = this.getNotificationMessage;
-      this.$refs.notification.style.opacity = 1;
-      this.timerId = setTimeout(() => {
-        this.$refs.notification.style.opacity = 0;
-      }, 5000)
-    }
+    },
   },
 
   methods: {
     ...mapActions({
-      
+      getProfilePlaylistsAction: "playlists/getProfilePlaylistsAction",
+      createPlaylistAction: "playlists/createPlaylistAction",
     }),
-  }
+
+    async createPlaylist() {
+      if (!this.isLoading) {
+        this.isLoading = true;
+
+        const result = await this.createPlaylistAction({
+          api: this.$api,
+          accessToken: this.getProfile.accessToken,
+          componentName: this.$options.name,
+          title: this.playlistTitle
+        });
+
+        this.isLoading = false;
+        if (result) {
+          this.playlistTitle = "";
+          this.$refs.createPlaylist.style.display = 'none'
+        }
+      }
+    },
+  },
 };
 </script>
 
@@ -203,7 +291,7 @@ a {
   grid-template-columns: auto 1fr;
   grid-template-rows: 1fr auto;
   grid-template-areas:
-    "nav__bar       main__view"
+    "nav-bar       main__view"
     "player__bar player__bar";
 }
 
@@ -225,60 +313,202 @@ a {
   z-index: 10;
 }
 
-/*Navigation Bar*/
-.nav__bar {
-  grid-area: nav__bar;
+.create-playlist {
+  position: absolute;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100vh;
+  left: 0;
+  top: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  z-index: 7;
+}
+
+.create-playlist__form {
+  position: relative;
   display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 0 100px;
+  border: 1px solid #ffcbdb;
+  border-radius: 5px;
+  background-color: #2d2d2d;
+}
+
+.create-playlist__form-title {
+  font-size: 1.5rem;
+  margin: 35px 0;
+}
+
+.input__block {
+  display: flex;
+  flex-direction: column;
+  margin: 25px 0;
+}
+
+.label__item {
+  margin-bottom: 10px;
+}
+
+.input__item {
+  height: 40px;
+  padding: 6px 12px;
+  border: 1px solid #d9dadc;
+  color: #000;
+}
+
+input:focus {
+  outline: none !important;
+  border: 1px solid #919496;
+}
+
+.submit__block {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  align-items: center;
+  margin-top: 25px;
+}
+
+.submit__create {
+  min-width: 160px;
+  padding: 10px 14px 10px;
+  border: 1px solid #ffcbdb;
+  border-radius: 100px;
+  color: #000;
+  background-color: #ffcbdb;
+  text-transform: uppercase;
+  transition: 0.3s;
+}
+
+.submit__create:hover {
+  background-color: #ffa1bd;
+  cursor: pointer;
+}
+
+.create-playlist__form-close {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  font-size: 1.2rem;
+  color: #ffcbdb;
+  cursor: pointer;
+}
+
+.create-playlist__form-close:hover {
+  color: #ffa1bd;
+}
+
+.loading_spinner {
+  position: relative;
+  min-width: 160px;
+  min-height: 55px;
+  border: 1px solid #ffcbdb;
+  border-radius: 100px;
+  background-color: #ffcbdb;
+}
+
+.loading_spinner:after {
+  content: " ";
+  display: block;
+  width: 25px;
+  height: 25px;
+  margin: 7px auto 0 auto;
+  border-radius: 50%;
+  border: 6px solid #000;
+  border-color: #000 transparent #000 transparent;
+  animation: loading_spinner 1.2s linear infinite;
+}
+
+@keyframes loading_spinner {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/*Navigation Bar*/
+.nav-bar {
+  grid-area: nav-bar;
+  display: flex;
+  box-sizing: border-box;
   padding: 0 8px;
   flex-direction: column;
   background-color: black;
+  overflow-y: scroll;
 }
 
-.nav__logo {
+.nav-bar::-webkit-scrollbar {
+  width: 0.5em;
+}
+
+.nav-bar::-webkit-scrollbar-track {
+  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+  -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+}
+
+.nav-bar::-webkit-scrollbar-thumb {
+  background-color: #666;
+}
+
+.nav-bar__logo {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-.nav__logo:hover .nav__logo__title {
+.nav-bar__logo:hover .nav-bar__logo__title {
   color: #ffa1bd;
 }
 
-.nav__logo__icon {
+.nav-bar__logo-icon {
   max-width: 100px;
 }
 
-.nav__logo__title {
+.nav-bar__logo__title {
   font-size: 1rem;
   font-weight: 600;
   transition: color 0.3s;
 }
 
-.nav__menu {
+.nav-bar__menu {
   margin-top: 20px;
 }
 
-.nav__bar__item {
+.nav-bar__block-divider {
+  border: 0px;
+  height: 1px;
+  background-color: rgba(255, 255, 255, 0.3);
+  margin: 10px 0;
+}
+
+.nav-bar__block-item {
   display: flex;
   align-items: center;
   padding: 10px 20px;
+  cursor: pointer;
 }
 
-.nav__bar__item > span {
+.nav-bar__block-item__text {
   transition: color 0.3s;
   font-size: 0.8rem;
 }
 
-.nav__bar__item > span:nth-child(1) {
+.nav-bar__block-item__icon {
   font-size: 1.3rem;
   margin-right: 10px;
 }
 
-.nav__bar__item:hover span {
+.nav-bar__block-item:hover span {
   color: #ffa1bd;
 }
 
-.playlists_add_title {
+.nav-bar__block-title {
   font-size: 1.1rem;
   margin-top: 25px;
   padding: 0px 20px;
@@ -321,6 +551,7 @@ a {
   top: 0;
   width: 100%;
   background-color: rgb(18, 18, 18);
+  z-index: 3;
 }
 
 .main__view__header__inner {
@@ -370,181 +601,6 @@ a {
 ::v-deep(.compilations_set__inner) {
   display: grid;
   grid-template-columns: 1fr;
-}
-
-::v-deep(.compilation) {
-  margin-top: 50px;
-}
-
-::v-deep(.compilation__title) {
-  display: flex;
-  justify-content: space-between;
-  flex-direction: row;
-}
-
-::v-deep(.compilation__title__text) {
-  font-size: 1.5rem;
-  font-weight: 600;
-}
-
-::v-deep(.compilation__title__link) {
-  text-transform: uppercase;
-  font-weight: 500;
-  font-size: 0.8rem;
-}
-
-::v-deep(.compilation__title__link:hover) {
-  text-decoration: underline;
-}
-
-::v-deep(.compilation__card-container) {
-  overflow-y: hidden;
-  display: grid;
-  grid-gap: 24px;
-  grid-auto-rows: auto;
-  grid-template-rows: 1fr;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-}
-
-::v-deep(.compilation__card-item) {
-  display: flex;
-  flex-direction: column;
-  margin-top: 24px;
-  padding: 16px;
-  background-color: #161616;
-  border-radius: 8px;
-  transition: background-color 0.3s;
-  overflow: hidden;
-}
-
-::v-deep(.compilation__card-item:hover) {
-  cursor: pointer;
-  background-color: #262626;
-}
-
-::v-deep(.compilation__card-item__image) {
-  position: relative;
-  width: 100%;
-  padding-bottom: 100%;
-  overflow: hidden;
-}
-
-::v-deep(.compilation__card-item__profile-photo) {
-  border-radius: 50%;
-  overflow: hidden;
-}
-
-::v-deep(.compilation__item__image-photo) {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border: 0px;
-  border-radius: 2px;
-  z-index: 5;
-}
-
-::v-deep(.compilation__item__image-plug) {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: #161616;
-}
-
-::v-deep(.compilation__card-item__title) {
-  font-size: 1.1rem;
-  margin-top: 15px;
-}
-
-::v-deep(.compilation__card-item__autors) {
-  margin-top: 15px;
-  font-size: 0.8rem;
-  color: #b3b3b3;
-  text-overflow: ellipsis;
-}
-
-::v-deep(.compilation__list) {
-  margin-top: 24px;
-  display: grid;
-  grid-template-columns: 1fr;
-}
-
-::v-deep(.compilation__list-item) {
-  display: grid;
-  grid-template-columns: 16px 4fr 2fr minmax(120px, 1fr);
-  grid-gap: 12px;
-  padding: 8px 16px;
-  border-radius: 4px;
-}
-
-::v-deep(.compilation__list-item:hover) {
-  background-color: #2d2d2d;
-}
-
-::v-deep(.compilation__list-item:hover .compilation__list-item__menu-item) {
-  opacity: 1;
-}
-
-::v-deep(.liked) {
-  opacity: 1;
-  color: #ffa1bd;
-}
-
-::v-deep(.compilation__list-item__block) {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-}
-
-::v-deep(.compilation__list-item__info) {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  margin: 0 14px;
-}
-
-::v-deep(.compilation__list-item__image) {
-  position: relative;
-  width: 56px;
-  height: 56px;
-}
-
-::v-deep(.compilation__list-item__title) {
-  font-size: 1rem;
-  line-height: 24px;
-}
-
-::v-deep(.compilation__list-item__autor) {
-  font-size: 0.8rem;
-  line-height: 24px;
-  color: #b3b3b3;
-}
-
-::v-deep(.compilation__list-item__autor:hover) {
-  color: #ffa1bd;
-  cursor: pointer;
-  text-decoration: underline;
-}
-
-::v-deep(.compilation__list-item__menu) {
-  justify-content: center;
-}
-
-::v-deep(.compilation__list-item__menu-item) {
-  opacity: 0;
-  margin-right: 15px;
-  cursor: pointer;
-  transition: 0.1s;
-}
-
-::v-deep(.compilation__list-item__menu-item:hover) {
-  color: #ffa1bd;
 }
 
 /*Player Bar*/

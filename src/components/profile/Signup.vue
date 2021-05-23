@@ -6,7 +6,7 @@
           <div class="section__title">Sign up for free to start listening.</div>
 
           <form @submit.prevent="signup" class="login__form" action="">
-            <ErrorMessages />
+            <ErrorMessages v-if="getError.fromComponentName == $options.name && getError.data.length" />
 
             <div class="input__block">
               <label class="label__item">What should we call you?</label>
@@ -55,18 +55,6 @@
 
             <div class="input__block">
               <div v-if="isLoading" class="loading_spinner">
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
-                <div></div>
               </div>
               <input
                 v-else
@@ -137,6 +125,8 @@ export default {
   computed: {
     ...mapGetters({
       getProfile: "profile/getProfile",
+
+      getError: "getError",
     }),
   },
 
@@ -151,6 +141,7 @@ export default {
 
       const result = await this.signupAction({
         api: this.$api,
+        componentName: this.$options.name,
         username: this.signup_form.username,
         email: this.signup_form.email,
         password: this.signup_form.password,
