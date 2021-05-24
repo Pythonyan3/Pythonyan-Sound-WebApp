@@ -114,6 +114,7 @@ export default {
     async logout() {
       this.logoutAction({
         api: this.$api,
+        componentName: this.$options.name,
         accessToken: this.getProfile.accessToken,
         refreshToken: this.getProfile.refreshToken
       });

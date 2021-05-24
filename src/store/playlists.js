@@ -37,9 +37,17 @@ export default {
                 commit("SET_NOTIFICATION_MESSAGE", "New Playlist Created Successful", { root: true });
                 return true;
             } catch (error) {
-                console.log(error);
                 commit("SET_ERROR", { error: error, fromComponentName: componentName }, { root: true })
                 return false;
+            }
+        },
+
+        async getPlaylistInfoAction({ commit }, { api, accessToken, componentName, playlistId }) {
+            try {
+                return await api.playlists.getPlaylistInfo(playlistId, accessToken);
+            } catch (error) {
+                commit("SET_ERROR", { error: error, fromComponentName: componentName }, { root: true });
+                return null;
             }
         }
     }

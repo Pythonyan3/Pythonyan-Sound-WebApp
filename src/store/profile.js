@@ -90,7 +90,7 @@ export default {
                 return await api.profile.getProfileInfo(profileId, accessToken);
             } catch (error) {
                 commit("SET_ERROR", { error: error, fromComponentName: componentName }, { root: true });
-                return false;
+                return null;
             }
         },
     }

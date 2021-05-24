@@ -63,7 +63,7 @@
             <!--Search returned some data-->
             <template v-else>
               <!--Artists-->
-              <ProfilesPlaylistsCards
+              <ProfilesCards
                 v-if="getSearchArtistsResults.length"
                 :isPreview="true"
                 :profiles="sliceSearchResults(getSearchArtistsResults)"
@@ -71,17 +71,17 @@
               />
 
               <!--Profiles-->
-              <ProfilesPlaylistsCards
+              <ProfilesCards
                 v-if="getSearchProfilesResults.length"
-                :isPreview="true"
                 :profiles="sliceSearchResults(getSearchProfilesResults)"
                 title="Profiles"
               />
 
               <!-- Playlists -->
-              <ProfilesPlaylistsCards
+              <PlaylistsCards
                 v-if="getSearchPlaylistsResults.length"
                 :isPreview="true"
+                :showArtist="true"
                 :playlists="sliceSearchResults(getSearchPlaylistsResults)"
                 title="Playlists"
               />
@@ -96,7 +96,12 @@
           No search param to perform request
           Need to show some information
         -->
-        <template v-else> </template>
+        <template v-else>
+          <div class="info-plug">
+            <h2 class="info-plug__title">Here should be some info but... Look at this cute snake:3</h2>
+            <img class="info-plug__image" src="../../assets/images/search_plug.png">
+          </div>
+        </template>
       </section>
     </div>
   </section>
@@ -104,7 +109,8 @@
 
 <script>
 import ErrorsPlug from "./ErrorsPlug.vue";
-import ProfilesPlaylistsCards from "./ProfilesPlaylistsCards.vue";
+import PlaylistsCards from "./PlaylistsCards.vue";
+import ProfilesCards from "./ProfilesCards.vue";
 import SongsList from "./SongsList.vue";
 import { mapGetters, mapActions } from "vuex";
 
@@ -114,7 +120,8 @@ export default {
   components: {
     ErrorsPlug,
     SongsList,
-    ProfilesPlaylistsCards,
+    PlaylistsCards,
+    ProfilesCards,
   },
 
   data() {
@@ -259,5 +266,24 @@ export default {
   100% {
     transform: rotate(360deg);
   }
+}
+
+.info-plug {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.info-plug__title {
+  margin-top: 100px;
+  font-size: 1.7rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.info-plug__image {
+  width: 300px;
+  height: 300px;
+  margin-top: 0 auto;
 }
 </style>

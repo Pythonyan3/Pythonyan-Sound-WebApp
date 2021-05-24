@@ -40,7 +40,8 @@
         <div class="compilation__list-item__block"></div>
 
         <div class="compilation__list-item__block compilation__list-item__menu">
-          <i
+          <template v-if="getProfile.id != song.artist.id">
+            <i
             v-if="song.is_liked"
             class="fas fa-heart compilation__list-item__menu-item liked"
             @click="unlikeSong($event.currentTarget, index)"
@@ -50,6 +51,7 @@
             class="far fa-heart compilation__list-item__menu-item"
             @click="likeSong($event.currentTarget, index)"
           ></i>
+          </template>
 
           <i class="fas fa-ellipsis-h compilation__list-item__menu-item"></i>
         </div>

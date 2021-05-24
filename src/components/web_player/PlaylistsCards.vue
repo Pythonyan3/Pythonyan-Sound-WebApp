@@ -9,9 +9,10 @@
       class="compilation__card-container"
       :class="isPreview ? 'compilation__card-container__multiline' : ''"
     >
-      <div
+      <router-link
         v-for="playlist in playlists"
         :key="playlist"
+        :to="{ name: 'WebPlayerPlaylist', params: { id: playlist.id } }"
         class="compilation__card-item"
       >
         <div class="compilation__card-item__image">
@@ -27,7 +28,7 @@
         <div class="compilation__card-item__title">
           {{ playlist.title }}
         </div>
-        <div class="compilation__card-item__autors">
+        <div v-if="showArtist" class="compilation__card-item__autors">
           By
           <router-link
             :to="{
@@ -38,50 +39,6 @@
             >{{ playlist.owner.username }}</router-link
           >
         </div>
-      </div>
-    </div>
-  </div>
-
-  <div v-if="profiles.length" class="compilation">
-    <div v-if="isPreview" class="compilation__title">
-      <h2 class="compilation__title__text">{{ title }}</h2>
-      <a href="" class="compilation__title__link">see all</a>
-    </div>
-    <h2 v-else class="compilation__title__text">{{ title }}</h2>
-
-    <div
-      class="compilation__card-container"
-      :class="isPreview ? 'compilation__card-container__multiline' : ''"
-    >
-      <router-link
-        v-for="profile in profiles"
-        :key="profile"
-        :to="{
-          name: 'WebPlayerProfile',
-          params: { id: profile.id },
-        }"
-      >
-        <div class="compilation__card-item">
-          <div
-            class="compilation__card-item__image compilation__card-item__profile-photo"
-          >
-            <img
-              class="compilation__item__image-photo"
-              :src="profile.photo || ''"
-              alt=""
-              onerror="this.style.display='none'"
-            />
-            <i class="far fa-user fa-5x compilation__item__image-plug"></i>
-          </div>
-
-          <div class="compilation__card-item__title">
-            {{ profile.username }}
-          </div>
-          <div v-if="profile.is_artist" class="compilation__card-item__autors">
-            Artist
-          </div>
-          <div v-else class="compilation__card-item__autors">Profile</div>
-        </div>
       </router-link>
     </div>
   </div>
@@ -89,7 +46,7 @@
 
 <script>
 export default {
-  name: "ProfilesPlaylistsCards",
+  name: "PlaylistsCards",
 
   props: {
     title: {
@@ -97,23 +54,18 @@ export default {
       default: "",
     },
 
+    showArtist: {
+      type: Boolean,
+      default: true,
+    },
+
     isPreview: {
       type: Boolean,
       default: false,
     },
 
-    profiles: {
-      type: Array,
-      default: function () {
-        return [];
-      },
-    },
-
     playlists: {
       type: Array,
-      default: function () {
-        return [];
-      },
     },
   },
 };
@@ -180,11 +132,6 @@ export default {
   position: relative;
   width: 100%;
   padding-bottom: 100%;
-  overflow: hidden;
-}
-
-.compilation__card-item__profile-photo {
-  border-radius: 50%;
   overflow: hidden;
 }
 

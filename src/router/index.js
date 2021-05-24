@@ -70,6 +70,11 @@ const routes = [
         name: "WebPlayerProfile",
         component: () => import('../components/web_player/Profile.vue')
       },
+      {
+        path: "playlist/:id",
+        name: "WebPlayerPlaylist",
+        component: () => import('../components/web_player/Playlist.vue')
+      },
     ]
   }
 ]

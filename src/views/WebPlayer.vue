@@ -96,13 +96,17 @@
         <hr class="nav-bar__block-divider" />
 
         <template v-if="getProfilePlaylists.length">
-          <a v-for="playlist in getProfilePlaylists" :key="playlist" href="">
-            <div class="nav-bar__block-item">
-              <span class="nav-bar__block-item__text">{{
-                playlist.title
-              }}</span>
-            </div>
-          </a>
+          <template v-for="playlist in getProfilePlaylists" :key="playlist">
+            <router-link
+              :to="{ name: 'WebPlayerPlaylist', params: { id: playlist.id } }"
+            >
+              <div class="nav-bar__block-item">
+                <span class="nav-bar__block-item__text">{{
+                  playlist.title
+                }}</span>
+              </div>
+            </router-link>
+          </template>
         </template>
       </div>
     </div>
@@ -111,14 +115,41 @@
       <header class="main__view__header">
         <div class="container">
           <div class="main__view__header__inner">
-            <div class="user__bar">
-              <div class="user__bar__icon">
+            <div class="user-bar" @click="openDropdownMenu()">
+              <div class="user-bar__icon">
                 <i class="far fa-user"></i>
               </div>
-              <div v-if="getProfile" class="user__bar__name">
+              <div v-if="getProfile" class="user-bar__name">
                 {{ getProfile.username }}
               </div>
               <div class="fas fa-caret-down caret__down__icon"></div>
+
+              <div ref="dropdown_menu" class="user-bar__dropdown-menu">
+                <ul class="dropdown-menu">
+                  <li class="dropdown-menu__item">
+                    <router-link
+                      :to="{ name: 'Main' }"
+                      class="dropdown-menu__item-link"
+                      >Account</router-link
+                    >
+                  </li>
+
+                  <li class="dropdown-menu__item">
+                    <router-link
+                      :to="{
+                        name: 'WebPlayerProfile',
+                        params: { id: getProfile.id },
+                      }"
+                      class="dropdown-menu__item-link"
+                      >Profile</router-link
+                    >
+                  </li>
+
+                  <li class="dropdown-menu__item">
+                    <a class="dropdown-menu__item-link">Logout</a>
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
         </div>
@@ -187,7 +218,7 @@ export default {
     return {
       timerId: null,
       isLoading: false,
-      playlistTitle: ""
+      playlistTitle: "",
     };
   },
 
@@ -225,8 +256,10 @@ export default {
           this.timerId = null;
         }
         this.$refs.notification.innerHTML = this.getNotificationMessage;
+        this.$refs.notification.style.zIndex = 10;
         this.$refs.notification.style.opacity = 1;
         this.timerId = setTimeout(() => {
+          this.$refs.notification.style.zIndex = -1;
           this.$refs.notification.style.opacity = 0;
           this.$store.commit("CLEAR_NOTIFICATION_MESSAGE");
         }, 5000);
@@ -240,6 +273,14 @@ export default {
       createPlaylistAction: "playlists/createPlaylistAction",
     }),
 
+    openDropdownMenu() {
+      if (this.$refs.dropdown_menu.style.display == "block") {
+        this.$refs.dropdown_menu.style.display = "none";
+      } else {
+        this.$refs.dropdown_menu.style.display = "block";
+      }
+    },
+
     async createPlaylist() {
       if (!this.isLoading) {
         this.isLoading = true;
@@ -248,13 +289,13 @@ export default {
           api: this.$api,
           accessToken: this.getProfile.accessToken,
           componentName: this.$options.name,
-          title: this.playlistTitle
+          title: this.playlistTitle,
         });
 
         this.isLoading = false;
         if (result) {
           this.playlistTitle = "";
-          this.$refs.createPlaylist.style.display = 'none'
+          this.$refs.createPlaylist.style.display = "none";
         }
       }
     },
@@ -297,8 +338,6 @@ a {
 
 .notification {
   position: absolute;
-  max-width: 500px;
-  max-height: calc(100% - 108px);
   bottom: 108px;
   left: 50%;
   padding: 15px 35px;
@@ -306,11 +345,11 @@ a {
   border-radius: 5px;
   background-color: #2d2d2d;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-  text-overflow: ellipsis;
   opacity: 0;
   transition: 0.5s;
   transform: translateX(-50%);
-  z-index: 10;
+  overflow: hidden;
+  z-index: -1;
 }
 
 .create-playlist {
@@ -495,13 +534,14 @@ input:focus {
 }
 
 .nav-bar__block-item__text {
-  transition: color 0.3s;
   font-size: 0.8rem;
+  transition: color 0.3s;
 }
 
 .nav-bar__block-item__icon {
   font-size: 1.3rem;
   margin-right: 10px;
+  transition: color 0.3s;
 }
 
 .nav-bar__block-item:hover span {
@@ -514,9 +554,11 @@ input:focus {
   padding: 0px 20px;
 }
 
-.selected__item {
+.router-link-exact-active > .nav-bar__block-item,
+.router-link-exact-active > .nav-bar__block-item > span {
   border-radius: 5px;
   background-color: rgb(40, 40, 40);
+  color: #ffa1bd;
 }
 
 /*Main View (Content)*/
@@ -564,7 +606,8 @@ input:focus {
   width: 100%;
 }
 
-.user__bar {
+.user-bar {
+  position: relative;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -574,12 +617,12 @@ input:focus {
   padding: 2px;
 }
 
-.user__bar:hover {
+.user-bar:hover {
   background-color: #333333;
   cursor: pointer;
 }
 
-.user__bar__icon {
+.user-bar__icon {
   width: 28px;
   height: 28px;
   padding: 4px 0 0 7px;
@@ -587,13 +630,36 @@ input:focus {
   border-radius: 15px;
 }
 
-.user__bar__name {
+.user-bar__name {
   margin: 0 15px;
   font-size: 0.8rem;
 }
 
 .caret__down__icon {
   margin-right: 8px;
+}
+
+.user-bar__dropdown-menu {
+  position: absolute;
+  display: none;
+  top: calc(100% + 10px);
+  right: 0;
+  background-color: #282828;
+}
+
+.dropdown-menu {
+  display: flex;
+  flex-direction: column;
+  padding: 4px;
+  list-style: none;
+}
+
+.dropdown-menu__item {
+  padding: 12px;
+}
+
+.dropdown-menu__item:hover {
+  background-color: hsla(0, 0%, 100%, 0.1);
 }
 
 /* Main View Content */
