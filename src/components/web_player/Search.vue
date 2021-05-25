@@ -87,7 +87,7 @@
               />
 
               <!--Songs-->
-              <SongsList :songs="sliceSearchResults(getSearchSongsResults)" />
+              <SongsList :songs="sliceSearchResults(getSearchSongsResults)" :playlistId="-1" />
             </template>
           </template>
         </template>

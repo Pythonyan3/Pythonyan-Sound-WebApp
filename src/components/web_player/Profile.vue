@@ -71,7 +71,7 @@
           </div>
 
           <!--Songs-->
-          <SongsList :songs="profile.songs" :showArtist="false" :isPreview="true"/>
+          <SongsList :songs="profile.songs" :showArtist="false" :isPreview="true" :playlistId="-2"/>
 
           <!-- Playlists -->
           <PlaylistsCards

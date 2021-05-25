@@ -11,10 +11,22 @@
         v-for="(song, index) in songs"
         :key="`song-${index}`"
         class="compilation__list-item"
+        :class="isPlayingSong(song.id) ? 'active-item' : ''"
       >
-        <div class="compilation__list-item__block">
+        <div class="compilation__list-item__block list-item__block__number">
           {{ index + 1 }}
         </div>
+        
+        <div v-if="isPlayingSong(song.id)"
+          class="fas fa-xs compilation__list-item__block list-item__block__play-song"
+          :class="getIsPlaying ? 'fa-pause' : 'fa-play'"
+          @click="playPauseSong"
+        ></div>
+
+        <div v-else
+          class="fas fa-play fa-xs compilation__list-item__block list-item__block__play-song"
+        ></div>
+
         <div class="compilation__list-item__block">
           <div class="compilation__list-item__image">
             <img
@@ -31,9 +43,14 @@
             <span class="compilation__list-item__title">
               {{ song.title }}
             </span>
-            <span v-if="showArtist" class="compilation__list-item__autor">
-              {{ song.artist.username }}
-            </span>
+            <router-link
+              v-if="showArtist"
+              :to="{ name: 'WebPlayerProfile', params: { id: song.artist.id } }"
+            >
+              <span class="compilation__list-item__autor">
+                {{ song.artist.username }}
+              </span>
+            </router-link>
           </div>
         </div>
 
@@ -42,15 +59,15 @@
         <div class="compilation__list-item__block compilation__list-item__menu">
           <template v-if="getProfile.id != song.artist.id">
             <i
-            v-if="song.is_liked"
-            class="fas fa-heart compilation__list-item__menu-item liked"
-            @click="unlikeSong($event.currentTarget, index)"
-          ></i>
-          <i
-            v-else
-            class="far fa-heart compilation__list-item__menu-item"
-            @click="likeSong($event.currentTarget, index)"
-          ></i>
+              v-if="song.is_liked"
+              class="fas fa-heart compilation__list-item__menu-item liked"
+              @click="unlikeSong($event.currentTarget, index)"
+            ></i>
+            <i
+              v-else
+              class="far fa-heart compilation__list-item__menu-item"
+              @click="likeSong($event.currentTarget, index)"
+            ></i>
           </template>
 
           <i class="fas fa-ellipsis-h compilation__list-item__menu-item"></i>
@@ -77,6 +94,10 @@ export default {
       default: false,
     },
 
+    playlistId: {
+      type: Number,
+    },
+
     songs: {
       type: Array,
     },
@@ -84,11 +105,30 @@ export default {
 
   computed: {
     ...mapGetters({
+      getPlaylistId: "player/getPlaylistId",
+      getCurrentSong: "player/getCurrentSong",
+      getIsPlaying: "player/getIsPlaying",
+
       getProfile: "profile/getProfile",
     }),
   },
 
   methods: {
+    isPlayingSong(songId) {
+      return (
+        this.playlistId == this.getPlaylistId &&
+        songId == this.getCurrentSong.id
+      );
+    },
+
+    playPauseSong() {
+      if (this.getIsPlaying) {
+        this.$store.commit("player/PAUSE");
+      } else {
+        this.$store.commit("player/PLAY");
+      }
+    },
+
     async likeSong(element, songIndex) {
       if (!element.classList.contains("disabled")) {
         element.classList.add("disabled");
@@ -105,7 +145,7 @@ export default {
           );
         } catch (error) {
           if (error.response) {
-            this.$store.commit("SET_ERROR", error); 
+            this.$store.commit("SET_ERROR", error);
           }
 
           this.$store.commit(
@@ -125,7 +165,10 @@ export default {
         const song = this.songs[songIndex];
 
         try {
-          await this.$api.songs.unlikeSong(song.id, this.getProfile.accessToken);
+          await this.$api.songs.unlikeSong(
+            song.id,
+            this.getProfile.accessToken
+          );
 
           song.is_liked = false;
           this.$store.commit(
@@ -134,7 +177,7 @@ export default {
           );
         } catch (error) {
           if (error.response) {
-            this.$store.commit("SET_ERROR", error); 
+            this.$store.commit("SET_ERROR", error);
           }
 
           this.$store.commit(
@@ -191,7 +234,8 @@ export default {
   border-radius: 4px;
 }
 
-.compilation__list-item:hover {
+.compilation__list-item:hover,
+.active-item {
   background-color: #2d2d2d;
 }
 
@@ -203,6 +247,19 @@ export default {
   display: flex;
   justify-content: flex-start;
   align-items: center;
+}
+
+.list-item__block__play-song {
+  cursor: pointer;
+  display: none;
+}
+
+.compilation__list-item:hover .list-item__block__play-song {
+  display: flex;
+}
+
+.compilation__list-item:hover .list-item__block__number {
+  display: none;
 }
 
 .compilation__list-item__info {

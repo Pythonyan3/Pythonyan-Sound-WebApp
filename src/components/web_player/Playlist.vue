@@ -23,6 +23,7 @@
               <div v-if="isLoading" class="loading_spinner"></div>
 
               <img
+                v-if="!isLoading"
                 :src="playlist.cover || ''"
                 class="playlist-header__photo-image"
                 alt=""
@@ -43,9 +44,16 @@
             </div>
           </div>
 
-          <div v-if="playlist.title" class="playlist-controls">
-            <div v-if="playlist.songs.length" class="playlist-controls__play">
-              <i class="fas fa-play"></i>
+          <div v-if="!isLoading && playlist.songs.length" class="playlist-controls">
+            <div @click="playPlaylist" class="playlist-controls__play">
+              <i
+                class="fas"
+                :class="
+                  getIsPlaying && playlist.id == getPlaylistId
+                    ? 'fa-pause'
+                    : 'fa-play'
+                "
+              ></i>
             </div>
             <template v-if="getProfile.id != playlist.owner.id">
               <i
@@ -62,7 +70,7 @@
           </div>
 
           <!--Songs-->
-          <SongsList :songs="playlist.songs" :showArtist="false" />
+          <SongsList v-if="!isLoading" :songs="playlist.songs" :playlistId="playlist.id" />
         </div>
       </div>
     </div>
@@ -101,6 +109,9 @@ export default {
     ...mapGetters({
       getError: "getError",
 
+      getIsPlaying: "player/getIsPlaying",
+      getPlaylistId: "player/getPlaylistId",
+
       getProfile: "profile/getProfile",
     }),
   },
@@ -115,9 +126,9 @@ export default {
 
   watch: {
     "$route.params": function () {
-        if (this.$route.params.id) {
-            this.getPlaylistInfo();
-        }
+      if (this.$route.params.id) {
+        this.getPlaylistInfo();
+      }
     },
   },
 
@@ -204,6 +215,23 @@ export default {
         }
 
         element.classList.remove("disabled");
+      }
+    },
+
+    playPlaylist() {
+      if (this.playlist.id == this.getPlaylistId) {
+        if (this.getIsPlaying) {
+          this.$store.commit("player/PAUSE");
+        } else {
+          this.$store.commit("player/PLAY");
+        }
+      } else {
+        this.$store.commit("player/SET_PLAYLIST", {
+          playlistId: this.playlist.id,
+          playlist: this.playlist.songs,
+        });
+
+        this.$store.commit("player/PLAY");
       }
     },
   },

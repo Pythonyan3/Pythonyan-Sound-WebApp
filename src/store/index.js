@@ -1,12 +1,12 @@
 import { createStore } from 'vuex'
+import player from './player'
 import playlists from './playlists'
 import profile from './profile'
 import search from './search'
-import songs from './songs'
 
 
 export default createStore({
-  modules: { playlists, profile, search, songs },
+  modules: { player, playlists, profile, search },
   state: {
     errorResponse: {
       status: 0,

@@ -115,38 +115,40 @@
       <header class="main__view__header">
         <div class="container">
           <div class="main__view__header__inner">
-            <div class="user-bar" @click="openDropdownMenu()">
+            <div
+              v-if="getProfile"
+              class="user-bar"
+              @click="openCloseDropdownMenu()"
+            >
               <div class="user-bar__icon">
                 <i class="far fa-user"></i>
               </div>
-              <div v-if="getProfile" class="user-bar__name">
+              <div class="user-bar__name">
                 {{ getProfile.username }}
               </div>
               <div class="fas fa-caret-down caret__down__icon"></div>
 
               <div ref="dropdown_menu" class="user-bar__dropdown-menu">
                 <ul class="dropdown-menu">
-                  <li class="dropdown-menu__item">
-                    <router-link
-                      :to="{ name: 'Main' }"
-                      class="dropdown-menu__item-link"
-                      >Account</router-link
-                    >
-                  </li>
+                  <router-link
+                    :to="{ name: 'Main' }"
+                    class="dropdown-menu__item-link"
+                  >
+                    <li class="dropdown-menu__item">Account</li>
+                  </router-link>
 
-                  <li class="dropdown-menu__item">
-                    <router-link
-                      :to="{
-                        name: 'WebPlayerProfile',
-                        params: { id: getProfile.id },
-                      }"
-                      class="dropdown-menu__item-link"
-                      >Profile</router-link
-                    >
-                  </li>
+                  <router-link
+                    :to="{
+                      name: 'WebPlayerProfile',
+                      params: { id: getProfile.id },
+                    }"
+                    class="dropdown-menu__item-link"
+                  >
+                    <li class="dropdown-menu__item">Profile</li>
+                  </router-link>
 
-                  <li class="dropdown-menu__item">
-                    <a class="dropdown-menu__item-link">Logout</a>
+                  <li class="dropdown-menu__item" @click="performLogout">
+                    Logout
                   </li>
                 </ul>
               </div>
@@ -160,26 +162,48 @@
 
     <div class="player__bar">
       <div class="play__song__info">
-        <div class="song__cover">
-          <div class="fas fa-compact-disc fa-lg"></div>
+        <div class="current-song-cover">
+          <img
+            v-if="getCurrentSong"
+            class="current-song-cover__photo"
+            :src="getCurrentSong.cover || ''"
+            alt=""
+            onload="this.style.display='inline'"
+            onerror="this.style.display='none'"
+          />
+          <i class="fas fa-compact-disc current-song-cover__plug"></i>
         </div>
 
-        <div class="song__info">
-          <a class="song__title" href=""> Проблемы </a>
+        <div v-if="getCurrentSong" class="song__info">
+          <div v-if="getCurrentSong" class="song__title">
+            {{ getCurrentSong.title }}
+          </div>
           <div>
-            <a class="song__autor" href=""> Andromeda </a>
+            <a v-if="getCurrentSong" class="song__autor">
+              {{ getCurrentSong.artist.username }}
+            </a>
           </div>
         </div>
 
-        <div class="player__button far fa-heart"></div>
+        <div v-if="getCurrentSong" class="player__button far fa-heart"></div>
       </div>
 
       <div class="player__controls">
         <div class="player__controls__buttons">
           <div class="player__button shuffle fas fa-random fa-sm"></div>
-          <div class="player__button previous fas fa-step-backward fa-sm"></div>
-          <div class="player__button play fas fa-play fa-xs"></div>
-          <div class="player__button next fas fa-step-forward fa-sm"></div>
+          <div
+            @click="prevSong"
+            class="player__button previous fas fa-step-backward fa-sm"
+          ></div>
+          <div
+            class="player__button play fas fa-xs"
+            :class="getIsPlaying ? 'fa-pause' : 'fa-play'"
+            @click="playPause"
+          ></div>
+          <div
+            @click="nextSong"
+            class="player__button next fas fa-step-forward fa-sm"
+          ></div>
           <div class="player__button repeat fas fa-redo-alt fa-sm"></div>
         </div>
 
@@ -224,6 +248,9 @@ export default {
 
   computed: {
     ...mapGetters({
+      getIsPlaying: "player/getIsPlaying",
+      getCurrentSong: "player/getCurrentSong",
+
       getProfile: "profile/getProfile",
 
       getProfilePlaylists: "playlists/getProfilePlaylists",
@@ -236,6 +263,14 @@ export default {
     if (!this.getProfile) {
       this.$router.replace({ name: "Main" });
     } else {
+      this.$store.commit("player/SET_AUDIO_EVENTS", {
+        onended: () => {
+          this.$store.commit("player/NEXT_SONG");
+        }
+      });
+
+      this.$store.commit("player/LOAD_PLAYER_INFO");
+
       this.getProfilePlaylistsAction({
         api: this.$api,
         componentName: this.$options.name,
@@ -246,6 +281,8 @@ export default {
 
   unmounted() {
     this.$store.commit("CLEAR_ERROR");
+    this.$store.commit("player/PAUSE");
+    this.$store.commit("player/SAVE_PLAYER_INFO");
   },
 
   watch: {
@@ -258,6 +295,7 @@ export default {
         this.$refs.notification.innerHTML = this.getNotificationMessage;
         this.$refs.notification.style.zIndex = 10;
         this.$refs.notification.style.opacity = 1;
+        
         this.timerId = setTimeout(() => {
           this.$refs.notification.style.zIndex = -1;
           this.$refs.notification.style.opacity = 0;
@@ -265,20 +303,37 @@ export default {
         }, 5000);
       }
     },
+
+    getProfile: function () {
+      if (!this.getProfile) {
+        this.$router.replace({ name: "Main" });
+      }
+    },
   },
 
   methods: {
     ...mapActions({
+      logoutAction: "profile/logoutAction",
+
       getProfilePlaylistsAction: "playlists/getProfilePlaylistsAction",
       createPlaylistAction: "playlists/createPlaylistAction",
     }),
 
-    openDropdownMenu() {
+    openCloseDropdownMenu() {
       if (this.$refs.dropdown_menu.style.display == "block") {
         this.$refs.dropdown_menu.style.display = "none";
       } else {
         this.$refs.dropdown_menu.style.display = "block";
       }
+    },
+
+    async performLogout() {
+      await this.logoutAction({
+        api: this.$api,
+        componentName: this.$options.name,
+        accessToken: this.getProfile.accessToken,
+        refreshToken: this.getProfile.refreshToken,
+      });
     },
 
     async createPlaylist() {
@@ -298,6 +353,24 @@ export default {
           this.$refs.createPlaylist.style.display = "none";
         }
       }
+    },
+
+    playPause() {
+      if (this.getIsPlaying) {
+        this.$store.commit("player/PAUSE");
+      } else {
+        this.$store.commit("player/PLAY");
+      }
+    },
+
+    nextSong() {
+      this.$store.commit("player/NEXT");
+      this.$store.commit("player/PLAY");
+    },
+
+    prevSong() {
+      this.$store.commit("player/PREV");
+      this.$store.commit("player/PLAY");
     },
   },
 };
@@ -655,7 +728,8 @@ input:focus {
 }
 
 .dropdown-menu__item {
-  padding: 12px;
+  padding: 12px 18px;
+  font-size: 0.8rem;
 }
 
 .dropdown-menu__item:hover {
@@ -689,13 +763,34 @@ input:focus {
   width: 30%;
 }
 
-.song__cover {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+.current-song-cover {
+  position: relative;
   width: 56px;
   height: 56px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+}
+
+.current-song-cover__photo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: 0px;
+  border-radius: 2px;
+  z-index: 5;
+}
+
+.current-song-cover__plug {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #161616;
 }
 
 .song__info {
@@ -740,7 +835,7 @@ input:focus {
   height: 32px;
   border: 1px solid white;
   border-radius: 50%;
-  padding: 8.5px 0 0 11.5px;
+  padding: 8.5px 0 0 10.5px;
 }
 
 .player__button:hover {
