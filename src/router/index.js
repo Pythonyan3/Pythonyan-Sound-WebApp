@@ -6,7 +6,7 @@ import WebPlayer from '../views/WebPlayer.vue'
 
 const routes = [
   {
-    path: '/',
+    path: '',
     name: 'Home',
     component: Home,
     children: [

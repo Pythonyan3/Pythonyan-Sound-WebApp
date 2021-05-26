@@ -23,8 +23,8 @@
               <div v-if="isLoading" class="loading_spinner"></div>
 
               <img
-                v-if="!isLoading"
-                :src="playlist.cover || ''"
+                v-if="!isLoading && getPlaylist"
+                :src="getPlaylist.cover || ''"
                 class="playlist-header__photo-image"
                 alt=""
                 onload="this.style.display='inline'"
@@ -36,28 +36,28 @@
             </div>
 
             <div class="playlist-header__info">
-              <div v-if="playlist.title" class="playlist-header__info__name">
-                {{ playlist.title }}
+              <div v-if="getPlaylist" class="playlist-header__info__name">
+                {{ getPlaylist.title }}
               </div>
 
               <div class="playlist-header__info__status">Playlist</div>
             </div>
           </div>
 
-          <div v-if="!isLoading && playlist.songs.length" class="playlist-controls">
+          <div v-if="!isLoading && getPlaylist && getPlaylist.songs.length" class="playlist-controls">
             <div @click="playPlaylist" class="playlist-controls__play">
               <i
                 class="fas"
                 :class="
-                  getIsPlaying && playlist.id == getPlaylistId
+                  getIsPlaying && getPlaylist.id == getPlayerPlaylistId
                     ? 'fa-pause'
                     : 'fa-play'
                 "
               ></i>
             </div>
-            <template v-if="getProfile.id != playlist.owner.id">
+            <template v-if="getProfile.id != getPlaylist.owner.id">
               <i
-                v-if="playlist.is_liked"
+                v-if="getPlaylist.is_liked"
                 @click="unlikePlaylist($event.currentTarget)"
                 class="fas fa-heart playlist-controls__unfollow"
               />
@@ -70,7 +70,7 @@
           </div>
 
           <!--Songs-->
-          <SongsList v-if="!isLoading" :songs="playlist.songs" :playlistId="playlist.id" />
+          <SongsList v-if="!isLoading && getPlaylist" :songs="getPlaylist.songs" :playlistId="getPlaylist.id" />
         </div>
       </div>
     </div>
@@ -80,10 +80,10 @@
 <script>
 import ErrorsPlug from "./ErrorsPlug.vue";
 import SongsList from "./SongsList.vue";
-import { mapGetters, mapActions } from "vuex";
+import { mapGetters, mapActions, mapMutations } from "vuex";
 
 export default {
-  name: "playlist",
+  name: "Playlist",
 
   components: {
     ErrorsPlug,
@@ -92,14 +92,6 @@ export default {
 
   data() {
     return {
-      playlist: {
-        id: null,
-        title: "",
-        cover: "",
-        songs: [],
-        owner: null,
-        is_liked: false,
-      },
       isLoading: false,
       isFollowing: false,
     };
@@ -110,7 +102,9 @@ export default {
       getError: "getError",
 
       getIsPlaying: "player/getIsPlaying",
-      getPlaylistId: "player/getPlaylistId",
+      getPlayerPlaylistId: "player/getPlaylistId",
+
+      getPlaylist: "playlists/getPlaylist",
 
       getProfile: "profile/getProfile",
     }),
@@ -121,7 +115,7 @@ export default {
   },
 
   unmounted() {
-    this.$store.commit("CLEAR_ERROR");
+    this.clearError()
   },
 
   watch: {
@@ -134,21 +128,26 @@ export default {
 
   methods: {
     ...mapActions({
+      likePlaylistAction: "playlists/likePlaylistAction",
+      unlikePlaylistAction: "playlists/unlikePlaylistAction",
       getPlaylistInfoAction: "playlists/getPlaylistInfoAction",
     }),
+
+    ...mapMutations({
+      setError: "SET_ERROR",
+      clearError: "CLEAR_ERROR",
+      setNotificationMessage: "SET_NOTIFICATION_MESSAGE"
+    }),
+
     async getPlaylistInfo() {
       this.isLoading = true;
 
-      const result = await this.getPlaylistInfoAction({
+      await this.getPlaylistInfoAction({
         api: this.$api,
         playlistId: this.$route.params.id,
         accessToken: this.getProfile.accessToken,
         componentName: this.$options.name,
       });
-
-      if (result && result.data) {
-        this.playlist = result.data;
-      }
 
       this.isLoading = false;
     },
@@ -157,30 +156,12 @@ export default {
       if (!element.classList.contains("disabled")) {
         element.classList.add("disabled");
 
-        try {
-          await this.$api.playlists.likePlaylist(
-            this.playlist.id,
-            this.getProfile.accessToken
-          );
-
-          this.playlist.is_liked = true;
-
-          this.$store.commit(
-            "SET_NOTIFICATION_MESSAGE",
-            "Saved to Your Library"
-          );
-        } catch (error) {
-          if (error.response) {
-            this.$store.commit("SET_ERROR", {
-              error: error,
-              fromComponentName: this.$options.name,
-            });
-          }
-          this.$store.commit(
-            "SET_NOTIFICATION_MESSAGE",
-            "Couldn't Save to Your Library"
-          );
-        }
+        await this.likePlaylistAction({
+          api: this.$api,
+          accessToken: this.getProfile.accessToken,
+          componentName: this.$options.name,
+          playlistId: this.getPlaylist.id
+        });
 
         element.classList.remove("disabled");
       }
@@ -190,36 +171,19 @@ export default {
       if (!element.classList.contains("disabled")) {
         element.classList.add("disabled");
 
-        try {
-          await this.$api.playlists.unlikePlaylist(
-            this.playlist.id,
-            this.getProfile.accessToken
-          );
-
-          this.playlist.is_liked = false;
-          this.$store.commit(
-            "SET_NOTIFICATION_MESSAGE",
-            "Removed from Your Library"
-          );
-        } catch (error) {
-          if (error.response) {
-            this.$store.commit("SET_ERROR", {
-              error: error,
-              fromComponentName: this.$options.name,
-            });
-          }
-          this.$store.commit(
-            "SET_NOTIFICATION_MESSAGE",
-            "Couldn't Remove from Your Library"
-          );
-        }
+        await this.unlikePlaylistAction({
+          api: this.$api,
+          accessToken: this.getProfile.accessToken,
+          componentName: this.$options.name,
+          playlistId: this.getPlaylist.id
+        })
 
         element.classList.remove("disabled");
       }
     },
 
     playPlaylist() {
-      if (this.playlist.id == this.getPlaylistId) {
+      if (this.playlist.id == this.getPlayerPlaylistId) {
         if (this.getIsPlaying) {
           this.$store.commit("player/PAUSE");
         } else {
@@ -228,7 +192,7 @@ export default {
       } else {
         this.$store.commit("player/SET_PLAYLIST", {
           playlistId: this.playlist.id,
-          playlist: this.playlist.songs,
+          songs: this.playlist.songs,
         });
 
         this.$store.commit("player/PLAY");

@@ -11,7 +11,7 @@
                 src="../assets/images/snake_logo.png"
                 alt=""
               />
-              <span class="header__logo__text">Pythonyan Sound</span>
+              <span class="header__logo__text">PythonyanSound</span>
             </div>
           </router-link>
 
@@ -45,7 +45,7 @@
         <div class="footer__inner">
           <a href="">
             <div class="header__logo">
-              <span class="header__logo__text">Pythonyan Sound</span>
+              <span class="header__logo__text">PythonyanSound</span>
             </div>
           </a>
 

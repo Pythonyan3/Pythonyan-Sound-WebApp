@@ -20,11 +20,12 @@
         <div v-if="isPlayingSong(song.id)"
           class="fas fa-xs compilation__list-item__block list-item__block__play-song"
           :class="getIsPlaying ? 'fa-pause' : 'fa-play'"
-          @click="playPauseSong"
+          @click="getIsPlaying ? playerPause() : playerPlay()"
         ></div>
 
         <div v-else
           class="fas fa-play fa-xs compilation__list-item__block list-item__block__play-song"
+          @click="playSong(index)"
         ></div>
 
         <div class="compilation__list-item__block">
@@ -78,7 +79,7 @@
 </template>
 
 <script>
-import { mapGetters } from "vuex";
+import { mapGetters, mapMutations } from "vuex";
 
 export default {
   name: "SongsList",
@@ -114,6 +115,17 @@ export default {
   },
 
   methods: {
+    ...mapMutations({
+      setError: "SET_ERROR",
+      clearError: "CLEAR_ERROR",
+      setNotificationMessage: "SET_NOTIFICATION_MESSAGE",
+
+      playerPlay: "player/PLAY",
+      playerPause: "player/PAUSE",
+      playerSetPlaylist: "player/SET_PLAYLIST",
+      playerSetCurrentSong: "player/SET_CURRENT_SONG"
+    }), 
+
     isPlayingSong(songId) {
       return (
         this.playlistId == this.getPlaylistId &&
@@ -121,12 +133,16 @@ export default {
       );
     },
 
-    playPauseSong() {
-      if (this.getIsPlaying) {
-        this.$store.commit("player/PAUSE");
-      } else {
-        this.$store.commit("player/PLAY");
-      }
+    playSong(songIndex) {
+      if (this.playlistId != this.getPlaylistId) {
+        this.playerSetPlaylist({
+          playlistId: this.playlistId,
+          songs: this.songs
+        });
+      } 
+
+      this.playerSetCurrentSong(songIndex);
+      this.playerPlay();
     },
 
     async likeSong(element, songIndex) {
@@ -139,21 +155,14 @@ export default {
           await this.$api.songs.likeSong(song.id, this.getProfile.accessToken);
 
           song.is_liked = true;
-          this.$store.commit(
-            "SET_NOTIFICATION_MESSAGE",
-            "Saved to Your Library"
-          );
+          this.setNotificationMessage("Saved to Your Library");
         } catch (error) {
           if (error.response) {
-            this.$store.commit("SET_ERROR", error);
+            this.setError(error);
           }
 
-          this.$store.commit(
-            "SET_NOTIFICATION_MESSAGE",
-            "Couldn't Save to Your Library"
-          );
+          this.setNotificationMessage("Couldn't Save to Your Library");
         }
-
         element.classList.remove("disabled");
       }
     },
@@ -163,7 +172,6 @@ export default {
         element.classList.add("disabled");
 
         const song = this.songs[songIndex];
-
         try {
           await this.$api.songs.unlikeSong(
             song.id,
@@ -171,19 +179,12 @@ export default {
           );
 
           song.is_liked = false;
-          this.$store.commit(
-            "SET_NOTIFICATION_MESSAGE",
-            "Removed from Your Library"
-          );
+          this.setNotificationMessage("Removed from Your Library");
         } catch (error) {
           if (error.response) {
-            this.$store.commit("SET_ERROR", error);
+            this.setError(error);
           }
-
-          this.$store.commit(
-            "SET_NOTIFICATION_MESSAGE",
-            "Couldn't Remove from Your Library"
-          );
+          this.setNotificationMessage("Couldn't Remove from Your Library");
         }
 
         element.classList.remove("disabled");
@@ -234,9 +235,12 @@ export default {
   border-radius: 4px;
 }
 
-.compilation__list-item:hover,
-.active-item {
+.compilation__list-item:hover {
   background-color: #2d2d2d;
+}
+
+.active-item .compilation__list-item__title {
+  color: #ffa1bd;
 }
 
 .compilation__list-item:hover .compilation__list-item__menu-item {
@@ -254,11 +258,11 @@ export default {
   display: none;
 }
 
-.compilation__list-item:hover .list-item__block__play-song {
+.compilation__list-item:hover .list-item__block__play-song, .active-item  .list-item__block__play-song{
   display: flex;
 }
 
-.compilation__list-item:hover .list-item__block__number {
+.compilation__list-item:hover .list-item__block__number, .active-item  .list-item__block__number {
   display: none;
 }
 

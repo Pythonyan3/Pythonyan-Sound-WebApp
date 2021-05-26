@@ -1,5 +1,5 @@
 <template>
-  <div class="grid__wrapper">
+  <div class="grid__wrapper" @mousemove="mouseMove" @mouseup="mouseUp">
     <div ref="notification" class="notification"></div>
 
     <div
@@ -179,9 +179,16 @@
             {{ getCurrentSong.title }}
           </div>
           <div>
-            <a v-if="getCurrentSong" class="song__autor">
+            <router-link
+              v-if="getCurrentSong"
+              :to="{
+                name: 'WebPlayerProfile',
+                params: { id: getCurrentSong.artist.id },
+              }"
+              class="song__autor"
+            >
               {{ getCurrentSong.artist.username }}
-            </a>
+            </router-link>
           </div>
         </div>
 
@@ -197,8 +204,8 @@
           ></div>
           <div
             class="player__button play fas fa-xs"
-            :class="getIsPlaying ? 'fa-pause' : 'fa-play'"
-            @click="playPause"
+            :class="getPlayerIsPlaying ? 'fa-pause' : 'fa-play'"
+            @click="getPlayerIsPlaying ? playerPause() : playerPlay()"
           ></div>
           <div
             @click="nextSong"
@@ -210,8 +217,9 @@
         <div class="player__controls__progress">
           <div class="controls__progress__time">0:00</div>
           <div class="controls__progress__bar">
-            <div class="progress__bar__slider"></div>
-            <div class="progress__bar"></div>
+            <div class="progress__bar">
+              <div class="progress__bar__slider"></div>
+            </div>
           </div>
           <div class="controls__progress__time">0:00</div>
         </div>
@@ -219,12 +227,22 @@
 
       <div class="player__extra__controls">
         <div
-          class="player__button extra__controls__button fas fa-volume-up fa-sm"
+          class="player__button extra__controls__button fas fa-sm"
+          :class="getPlayerIsMuted ? 'fa-volume-mute' : 'fa-volume-up'"
+          @click="getPlayerIsMuted ? unmuteVolume() : muteVolume()"
         ></div>
         <div class="extra__controls__volume">
-          <div class="controls__progress__bar">
-            <div class="progress__bar__slider"></div>
-            <div class="progress__bar"></div>
+          <div
+            @mousedown="mouseDown"
+            ref="progress_bar_control"
+            class="controls__progress__bar"
+          >
+            <div
+              class="progress__bar"
+              :style="'width: ' + getPlayerVolume * 100 + '%;'"
+            >
+              <div class="progress__bar__slider"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -233,7 +251,7 @@
 </template>
 
 <script>
-import { mapGetters, mapActions } from "vuex";
+import { mapGetters, mapActions, mapMutations } from "vuex";
 
 export default {
   name: "WebPlayer",
@@ -242,14 +260,17 @@ export default {
     return {
       timerId: null,
       isLoading: false,
+      isMousedown: false,
       playlistTitle: "",
     };
   },
 
   computed: {
     ...mapGetters({
-      getIsPlaying: "player/getIsPlaying",
+      getPlayerIsPlaying: "player/getIsPlaying",
       getCurrentSong: "player/getCurrentSong",
+      getPlayerIsMuted: "player/getIsMuted",
+      getPlayerVolume: "player/getVolume",
 
       getProfile: "profile/getProfile",
 
@@ -263,13 +284,13 @@ export default {
     if (!this.getProfile) {
       this.$router.replace({ name: "Main" });
     } else {
-      this.$store.commit("player/SET_AUDIO_EVENTS", {
+      this.playerSetAudioEvents({
         onended: () => {
-          this.$store.commit("player/NEXT_SONG");
-        }
+          this.playerNext();
+        },
       });
 
-      this.$store.commit("player/LOAD_PLAYER_INFO");
+      this.loadPlayerData();
 
       this.getProfilePlaylistsAction({
         api: this.$api,
@@ -280,9 +301,9 @@ export default {
   },
 
   unmounted() {
-    this.$store.commit("CLEAR_ERROR");
-    this.$store.commit("player/PAUSE");
-    this.$store.commit("player/SAVE_PLAYER_INFO");
+    this.clearError();
+    this.playerPause();
+    this.savePlayerData();
   },
 
   watch: {
@@ -295,17 +316,18 @@ export default {
         this.$refs.notification.innerHTML = this.getNotificationMessage;
         this.$refs.notification.style.zIndex = 10;
         this.$refs.notification.style.opacity = 1;
-        
+
         this.timerId = setTimeout(() => {
           this.$refs.notification.style.zIndex = -1;
           this.$refs.notification.style.opacity = 0;
-          this.$store.commit("CLEAR_NOTIFICATION_MESSAGE");
-        }, 5000);
+          this.clearNotificationMessage();
+        }, 3000);
       }
     },
 
     getProfile: function () {
       if (!this.getProfile) {
+        this.clearPlayerData();
         this.$router.replace({ name: "Main" });
       }
     },
@@ -317,6 +339,25 @@ export default {
 
       getProfilePlaylistsAction: "playlists/getProfilePlaylistsAction",
       createPlaylistAction: "playlists/createPlaylistAction",
+    }),
+
+    ...mapMutations({
+      setError: "SET_ERROR",
+      clearError: "CLEAR_ERROR",
+      setNotificationMessage: "SET_NOTIFICATION_MESSAGE",
+      clearNotificationMessage: "CLEAR_NOTIFICATION_MESSAGE",
+
+      playerPlay: "player/PLAY",
+      playerPause: "player/PAUSE",
+      playerNext: "player/NEXT",
+      playerPrev: "player/PREV",
+      playerMute: "player/MUTE_VOLUME",
+      playerUnmute: "player/UNMUTE_VOLUME",
+      playerSetVolume: "player/SET_VOLUME",
+      playerSetAudioEvents: "player/SET_AUDIO_EVENTS",
+      savePlayerData: "player/SAVE_PLAYER_DATA",
+      loadPlayerData: "player/LOAD_PLAYER_DATA",
+      clearPlayerData: "player/CLEAR_PLAYER_DATA",
     }),
 
     openCloseDropdownMenu() {
@@ -355,22 +396,46 @@ export default {
       }
     },
 
-    playPause() {
-      if (this.getIsPlaying) {
-        this.$store.commit("player/PAUSE");
-      } else {
-        this.$store.commit("player/PLAY");
-      }
-    },
-
     nextSong() {
-      this.$store.commit("player/NEXT");
-      this.$store.commit("player/PLAY");
+      this.playerNext();
+      this.playerPlay();
     },
 
     prevSong() {
-      this.$store.commit("player/PREV");
-      this.$store.commit("player/PLAY");
+      this.playerPrev();
+      this.playerPlay();
+    },
+
+    muteVolume() {
+      this.playerMute();
+    },
+
+    unmuteVolume() {
+      this.playerUnmute();
+    },
+
+    mouseUp() {
+      this.isMousedown = false;
+    },
+
+    mouseDown: function (event) {
+      const relativeX = event.clientX - this.$refs.progress_bar_control.offsetLeft;
+      this.playerSetVolume(relativeX / this.$refs.progress_bar_control.offsetWidth);
+      this.isMousedown = true;
+    },
+
+    mouseMove: function (event) {
+      //console.log(event);
+      if (this.isMousedown) {
+        const relativeX = event.clientX - this.$refs.progress_bar_control.offsetLeft;
+        if (relativeX >= 0 && relativeX <= this.$refs.progress_bar_control.offsetWidth) {
+          this.playerSetVolume(relativeX / 100);
+        } else if (relativeX < 0) {
+          this.playerSetVolume(0);
+        } else {
+          this.playerSetVolume(1);
+        }
+      }
     },
   },
 };
@@ -806,9 +871,9 @@ input:focus {
   font-size: 0.8rem;
   line-height: 24px;
   color: #b3b3b3;
+  cursor: pointer;
 }
 
-.song__title:hover,
 .song__autor:hover {
   color: #ffa1bd;
   text-decoration: underline;
@@ -861,28 +926,29 @@ input:focus {
 .controls__progress__bar {
   display: flex;
   flex-direction: row;
-  align-items: center;
-  position: relative;
   width: 100%;
-  height: 10px;
+  height: 4px;
+  border-radius: 6px;
+  background-color: #535353;
+}
+
+.progress__bar {
+  position: relative;
+  width: 50%;
+  height: 4px;
+  border-radius: 2px;
+  background-color: #ffa1bd;
 }
 
 .progress__bar__slider {
   display: none;
   position: absolute;
-  left: -5px;
-  top: -1px;
+  right: -5px;
+  top: -4.5px;
   width: 12px;
   height: 12px;
   border-radius: 6px;
   background-color: white;
-}
-
-.progress__bar {
-  width: 100%;
-  height: 4px;
-  border-radius: 2px;
-  background-color: #535353;
 }
 
 .controls__progress__bar:hover .progress__bar__slider {

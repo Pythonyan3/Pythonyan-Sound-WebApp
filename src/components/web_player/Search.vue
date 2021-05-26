@@ -87,7 +87,7 @@
               />
 
               <!--Songs-->
-              <SongsList :songs="sliceSearchResults(getSearchSongsResults)" :playlistId="-1" />
+              <SongsList :songs="sliceSearchResults(getSearchSongsResults)" :playlistId="playlistId" />
             </template>
           </template>
         </template>
@@ -126,6 +126,7 @@ export default {
 
   data() {
     return {
+      playlistId: -1,
       isLoading: false,
     };
   },

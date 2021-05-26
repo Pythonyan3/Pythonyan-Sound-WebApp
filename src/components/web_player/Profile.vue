@@ -48,9 +48,16 @@
             </div>
           </div>
 
-          <div v-if="profile.username" class="profile-controls">
-            <div v-if="profile.songs.length" class="profile-controls__play">
-              <i class="fas fa-play"></i>
+          <div v-if="!isLoading" class="profile-controls">
+            <div v-if="profile.songs.length" @click="playPlaylist" class="profile-controls__play">
+              <i
+                class="fas"
+                :class="
+                  getIsPlaying && playlistId == getPlaylistId
+                    ? 'fa-pause'
+                    : 'fa-play'
+                "
+              ></i>
             </div>
             <template v-if="getProfile.id != profile.id">
               <div
@@ -90,7 +97,7 @@
 import ErrorsPlug from "./ErrorsPlug.vue";
 import PlaylistsCards from "./PlaylistsCards.vue";
 import SongsList from "./SongsList.vue";
-import { mapGetters, mapActions } from "vuex";
+import { mapGetters, mapActions, mapMutations } from "vuex";
 
 export default {
   name: "Profile",
@@ -103,6 +110,7 @@ export default {
 
   data() {
     return {
+      playlistId: -2,
       profile: {
         id: null,
         username: "",
@@ -124,6 +132,9 @@ export default {
       getError: "getError",
 
       getProfile: "profile/getProfile",
+
+      getPlaylistId: "player/getPlaylistId",
+      getIsPlaying: "player/getIsPlaying"
     }),
   },
 
@@ -132,13 +143,32 @@ export default {
   },
 
   unmounted() {
-    this.$store.commit("CLEAR_ERROR");
+    this.clearError;
+  },
+
+  watch: {
+    "$route.params": function () {
+      if (this.$route.params.id) {
+        this.getProfileInfo();
+      }
+    },
   },
 
   methods: {
     ...mapActions({
       getProfileInfoAction: "profile/getProfileInfoAction",
     }),
+
+    ...mapMutations({
+      setError: "SET_ERROR",
+      clearError: "CLEAR_ERROR",
+      setNotificationMessage: "SET_NOTIFICATION_MESSAGE",
+
+      playerPlay: "player/PLAY",
+      playerPause: "player/PAUSE",
+      playerSetPlaylist: "player/SET_PLAYLIST"
+    }),
+
     async getProfileInfo() {
       this.isLoading = true;
 
@@ -154,6 +184,23 @@ export default {
       this.isLoading = false;
     },
 
+    playPlaylist() {
+      if (this.getPlaylistId == this.playlistId) {
+        if (this.getIsPlaying) {
+          this.playerPause();
+        } else {
+          this.playerPlay();
+        }
+      } else {
+        this.playerSetPlaylist({
+          playlistId: this.playlistId,
+          songs: this.profile.songs,
+        });
+
+        this.playerPlay();
+      }
+    },
+
     async followProfile(element) {
       if (!element.classList.contains("disabled")) {
         element.classList.add("disabled");
@@ -165,22 +212,15 @@ export default {
           );
 
           this.profile.is_followed = true;
-
-          this.$store.commit(
-            "SET_NOTIFICATION_MESSAGE",
-            "Saved to Your Library"
-          );
+          this.setNotificationMessage("Saved to Your Library");
         } catch (error) {
           if (error.response) {
-            this.$store.commit("SET_ERROR", {
+            this.setError({
               error: error,
               fromComponentName: this.$options.name,
             });
           }
-          this.$store.commit(
-            "SET_NOTIFICATION_MESSAGE",
-            "Couldn't Save to Your Library"
-          );
+          this.setNotificationMessage("Couldn't Save to Your Library");
         }
 
         element.classList.remove("disabled");
@@ -198,21 +238,14 @@ export default {
           );
 
           this.profile.is_followed = false;
-          this.$store.commit(
-            "SET_NOTIFICATION_MESSAGE",
-            "Removed from Your Library"
-          );
+          this.setNotificationMessage("Removed from Your Library");
         } catch (error) {
           if (error.response) {
-            this.$store.commit(
-              "SET_ERROR",
-              { error: error, fromComponentName: this.$options.name }
-            );
+            this.setError({ 
+              error: error, fromComponentName: this.$options.name 
+            });
           }
-          this.$store.commit(
-            "SET_NOTIFICATION_MESSAGE",
-            "Couldn't Remove from Your Library"
-          );
+          this.setNotificationMessage("Couldn't Remove from Your Library");
         }
 
         element.classList.remove("disabled");
