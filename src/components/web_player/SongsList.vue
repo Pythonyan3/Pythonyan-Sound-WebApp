@@ -338,8 +338,4 @@ export default {
 .compilation__list-item__menu-item:hover {
   color: #ffa1bd;
 }
-
-.disabled {
-  color: grey;
-}
 </style>

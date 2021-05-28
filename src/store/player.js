@@ -5,6 +5,8 @@ export default {
         playerInfo: {
             isPlaying: false,
             isMuted: false,
+            duration: 0,
+            time:0,
             volume: 1.0,
             repeat: 0,
         },
@@ -36,15 +38,23 @@ export default {
             return state.playerInfo.isMuted;
         },
 
+        getDuration(state) {
+            return state.playerInfo.duration;
+        },
+
+        getTime(state) {
+            return state.playerInfo.time;
+        },
+
         getRepeat(state) {
             return state.playerInfo.repeat;
-        }
+        },
     },
     mutations: {
         SAVE_PLAYER_DATA(state) {
-            if (state.playerInfo) {
-                localStorage.setItem("playerInfo", JSON.stringify(state.playerInfo));
-            }
+            state.playerInfo.isPlaying = false;
+            localStorage.setItem("playerInfo", JSON.stringify(state.playerInfo));
+
             if (state.playlistInfo) {
                 localStorage.setItem("playlistInfo", JSON.stringify(state.playlistInfo));
             }
@@ -56,8 +66,11 @@ export default {
                 state.audio.src = state.playlistInfo.songs[state.playlistInfo.currentSongIndex].audio;
                 state.audio.load();
             }
+
             if (localStorage.getItem("playerInfo")) {
                 state.playerInfo = JSON.parse(localStorage.getItem("playerInfo"));
+                state.audio.volume = state.playerInfo.volume;
+                state.audio.currentTime = state.playerInfo.time;
             }
         },
 
@@ -65,11 +78,23 @@ export default {
             if (localStorage.getItem("playlistInfo")) {
                 state.playlistInfo = null;
                 localStorage.removeItem("playlistInfo");
+            }
+
+            if (localStorage.getItem("playerInfo")) {
+                state.playerInfo = {
+                    isPlaying: false,
+                    isMuted: false,
+                    duration: 0,
+                    time:0,
+                    volume: 1.0,
+                    repeat: 0,
+                },
                 localStorage.removeItem("playerInfo");
             }
         },
 
         SET_AUDIO_EVENTS(state, { onpauseHandler, onplayHandler, onendedHandler, onvolumechangeHandler }) {
+
             state.audio.onplay = () => {
                 state.playerInfo.isPlaying = true;
                 if (onplayHandler) {
@@ -82,7 +107,11 @@ export default {
                     onpauseHandler();
                 }
             };
-            state.audio.onended = onendedHandler;
+            state.audio.onended = () => {
+                if (onendedHandler) {
+                    onendedHandler();
+                }
+            }
 
             state.audio.onvolumechange = () => {
                 if (state.audio.volume == 0 || state.audio.muted) {
@@ -96,12 +125,19 @@ export default {
                     onvolumechangeHandler();
                 }
             }
+
+            state.audio.ontimeupdate = () => {
+                state.playerInfo.time = state.audio.currentTime;
+            },
+
+            state.audio.ondurationchange = () => {
+                state.playerInfo.duration = state.audio.duration;
+
+            }
         },
 
         SET_PLAYLIST(state, { playlistId, songs }) {
             if (songs.length) {
-                state.audio.pause();
-
                 state.playlistInfo = {
                     playlistId: playlistId,
                     songs: songs,            
@@ -110,16 +146,16 @@ export default {
                 }
                 
                 state.audio.src = state.playlistInfo.songs[0].audio
+                state.audio.load();
             }
         },
 
         SET_CURRENT_SONG(state, payload) {
             if (payload >= 0 && payload <= state.playlistInfo.songs.length-1) {
-                state.audio.pause();
-
                 state.playlistInfo.currentSongIndex = payload;
 
                 state.audio.src = state.playlistInfo.songs[state.playlistInfo.currentSongIndex].audio
+                state.audio.load();
             }
         },
 
@@ -132,12 +168,10 @@ export default {
         PAUSE(state) {
             if (state.audio.src) {
                 state.audio.pause();
-            }
+            }            
         },
 
         NEXT(state) {
-            state.audio.pause();
-            
             if (state.playlistInfo.currentSongIndex < state.playlistInfo.songs.length-1) {    
                 state.playlistInfo.currentSongIndex++;
             } else if (state.playlistInfo.currentSongIndex == state.playlistInfo.songs.length-1) {
@@ -145,19 +179,18 @@ export default {
             }
 
             state.audio.src = state.playlistInfo.songs[state.playlistInfo.currentSongIndex].audio;
+            state.audio.load();
         },
 
         PREV(state) {
-            state.audio.pause();
-            
             if (state.playlistInfo.currentSongIndex > 0) {    
                 state.playlistInfo.currentSongIndex--;
             } else if (state.playlistInfo.currentSongIndex == 0) {
                 state.playlistInfo.currentSongIndex = state.playlistInfo.songs.length-1;
             }
 
-            state.audio.src = state.playlistInfo.songs[state.playlistInfo.currentSongIndex].audio;
-            state.audio.load();
+            state.audio.src = state.playlistInfo.songs[state.playlistInfo.currentSongIndex].audio;    
+            state.audio.load();        
         },
 
         MUTE_VOLUME(state) {
@@ -170,6 +203,10 @@ export default {
 
         SET_VOLUME(state, payload) {
             state.audio.volume = payload;
+        },
+
+        SET_TIME(state, payload) {
+            state.audio.currentTime = payload;
         }
     },
     actions: {

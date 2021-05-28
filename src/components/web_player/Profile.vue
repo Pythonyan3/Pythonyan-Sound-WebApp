@@ -143,7 +143,7 @@ export default {
   },
 
   unmounted() {
-    this.clearError;
+    this.clearError();
   },
 
   watch: {

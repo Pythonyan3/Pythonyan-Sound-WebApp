@@ -183,7 +183,7 @@ export default {
     },
 
     playPlaylist() {
-      if (this.playlist.id == this.getPlayerPlaylistId) {
+      if (this.getPlaylist.id == this.getPlayerPlaylistId) {
         if (this.getIsPlaying) {
           this.$store.commit("player/PAUSE");
         } else {
@@ -191,8 +191,8 @@ export default {
         }
       } else {
         this.$store.commit("player/SET_PLAYLIST", {
-          playlistId: this.playlist.id,
-          songs: this.playlist.songs,
+          playlistId: this.getPlaylist.id,
+          songs: this.getPlaylist.songs,
         });
 
         this.$store.commit("player/PLAY");

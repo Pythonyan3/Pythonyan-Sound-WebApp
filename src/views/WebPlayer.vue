@@ -1,5 +1,9 @@
 <template>
-  <div class="grid__wrapper" @mousemove="mouseMove" @mouseup="mouseUp">
+  <div
+    class="grid__wrapper"
+    @mousemove="playerControlsMouseMove"
+    @mouseup="playerControlsMouseUp"
+  >
     <div ref="notification" class="notification"></div>
 
     <div
@@ -174,25 +178,37 @@
           <i class="fas fa-compact-disc current-song-cover__plug"></i>
         </div>
 
-        <div v-if="getCurrentSong" class="song__info">
-          <div v-if="getCurrentSong" class="song__title">
-            {{ getCurrentSong.title }}
+        <template v-if="getCurrentSong">
+          <div class="song__info">
+            <div class="song__title">
+              {{ getCurrentSong.title }}
+            </div>
+            <div>
+              <router-link
+                :to="{
+                  name: 'WebPlayerProfile',
+                  params: { id: getCurrentSong.artist.id },
+                }"
+                class="song__autor"
+              >
+                {{ getCurrentSong.artist.username }}
+              </router-link>
+            </div>
           </div>
-          <div>
-            <router-link
-              v-if="getCurrentSong"
-              :to="{
-                name: 'WebPlayerProfile',
-                params: { id: getCurrentSong.artist.id },
-              }"
-              class="song__autor"
-            >
-              {{ getCurrentSong.artist.username }}
-            </router-link>
-          </div>
-        </div>
 
-        <div v-if="getCurrentSong" class="player__button far fa-heart"></div>
+          <template v-if="getProfile.id != getCurrentSong.artist.id">
+            <i
+              v-if="getCurrentSong.is_liked"
+              class="player__button fas fa-heart liked"
+              @click="unlikeSong($event.currentTarget, getCurrentSong.id)"
+            ></i>
+            <i
+              v-else
+              class="player__button far fa-heart"
+              @click="likeSong($event.currentTarget, getCurrentSong.id)"
+            ></i>
+          </template>
+        </template>
       </div>
 
       <div class="player__controls">
@@ -215,13 +231,40 @@
         </div>
 
         <div class="player__controls__progress">
-          <div class="controls__progress__time">0:00</div>
-          <div class="controls__progress__bar">
-            <div class="progress__bar">
+          <div class="controls__progress__time">
+            {{
+              Math.floor(getPlayerTime / 60) +
+              ":" +
+              parseInt(getPlayerTime % 60).toLocaleString("en-US", {
+                minimumIntegerDigits: 2,
+                useGrouping: false,
+              })
+            }}
+          </div>
+          <div
+            class="controls__progress__bar"
+            ref="timeProgressBar"
+            @mousedown="controlsMouseDown($event, true)"
+          >
+            <div
+              class="progress__bar"
+              :style="
+                'width: ' + (getPlayerTime / getPlayerDuration) * 100 + '%;'
+              "
+            >
               <div class="progress__bar__slider"></div>
             </div>
           </div>
-          <div class="controls__progress__time">0:00</div>
+          <div class="controls__progress__time">
+            {{
+              Math.floor(getPlayerDuration / 60) +
+              ":" +
+              parseInt(getPlayerDuration % 60).toLocaleString("en-US", {
+                minimumIntegerDigits: 2,
+                useGrouping: false,
+              })
+            }}
+          </div>
         </div>
       </div>
 
@@ -233,8 +276,8 @@
         ></div>
         <div class="extra__controls__volume">
           <div
-            @mousedown="mouseDown"
-            ref="progress_bar_control"
+            @mousedown="controlsMouseDown($event, false)"
+            ref="volumeProgressBar"
             class="controls__progress__bar"
           >
             <div
@@ -260,24 +303,11 @@ export default {
     return {
       timerId: null,
       isLoading: false,
-      isMousedown: false,
+      isTimeMousedown: false,
+      isVolumeMousedown: false,
+      oldPlayerPlayingState: false,
       playlistTitle: "",
     };
-  },
-
-  computed: {
-    ...mapGetters({
-      getPlayerIsPlaying: "player/getIsPlaying",
-      getCurrentSong: "player/getCurrentSong",
-      getPlayerIsMuted: "player/getIsMuted",
-      getPlayerVolume: "player/getVolume",
-
-      getProfile: "profile/getProfile",
-
-      getProfilePlaylists: "playlists/getProfilePlaylists",
-
-      getNotificationMessage: "getNotificationMessage",
-    }),
   },
 
   mounted() {
@@ -285,9 +315,10 @@ export default {
       this.$router.replace({ name: "Main" });
     } else {
       this.playerSetAudioEvents({
-        onended: () => {
+        onendedHandler: () => {
           this.playerNext();
-        },
+          this.playerPlay();
+        }
       });
 
       this.loadPlayerData();
@@ -333,6 +364,23 @@ export default {
     },
   },
 
+  computed: {
+    ...mapGetters({
+      getPlayerIsPlaying: "player/getIsPlaying",
+      getCurrentSong: "player/getCurrentSong",
+      getPlayerIsMuted: "player/getIsMuted",
+      getPlayerVolume: "player/getVolume",
+      getPlayerTime: "player/getTime",
+      getPlayerDuration: "player/getDuration",
+
+      getProfile: "profile/getProfile",
+
+      getProfilePlaylists: "playlists/getProfilePlaylists",
+
+      getNotificationMessage: "getNotificationMessage",
+    }),
+  },
+
   methods: {
     ...mapActions({
       logoutAction: "profile/logoutAction",
@@ -354,6 +402,7 @@ export default {
       playerMute: "player/MUTE_VOLUME",
       playerUnmute: "player/UNMUTE_VOLUME",
       playerSetVolume: "player/SET_VOLUME",
+      playerSetTime: "player/SET_TIME",
       playerSetAudioEvents: "player/SET_AUDIO_EVENTS",
       savePlayerData: "player/SAVE_PLAYER_DATA",
       loadPlayerData: "player/LOAD_PLAYER_DATA",
@@ -414,27 +463,109 @@ export default {
       this.playerUnmute();
     },
 
-    mouseUp() {
-      this.isMousedown = false;
+    playerControlsMouseUp() {
+      this.isVolumeMousedown = false;
+      if (this.isTimeMousedown) {
+        this.isTimeMousedown = false;
+        if (this.oldPlayerPlayingState) {
+          this.playerPlay();
+        }
+      }
     },
 
-    mouseDown: function (event) {
-      const relativeX = event.clientX - this.$refs.progress_bar_control.offsetLeft;
-      this.playerSetVolume(relativeX / this.$refs.progress_bar_control.offsetWidth);
-      this.isMousedown = true;
+    controlsMouseDown(event, isTimeControl = false) {
+      if (isTimeControl) {
+        // set new audio time
+        const relativeX = event.clientX - this.$refs.timeProgressBar.offsetLeft;
+        this.oldPlayerPlayingState = this.getPlayerIsPlaying;
+        this.isTimeMousedown = true;
+        this.playerPause();
+        this.playerSetTime(
+          (relativeX / this.$refs.timeProgressBar.offsetWidth) *
+            this.getPlayerDuration
+        );
+      } else {
+        //set new volume value
+        const relativeX =
+          event.clientX - this.$refs.volumeProgressBar.offsetLeft;
+        this.isVolumeMousedown = true;
+        this.playerSetVolume(
+          relativeX / this.$refs.volumeProgressBar.offsetWidth
+        );
+      }
     },
 
-    mouseMove: function (event) {
-      //console.log(event);
-      if (this.isMousedown) {
-        const relativeX = event.clientX - this.$refs.progress_bar_control.offsetLeft;
-        if (relativeX >= 0 && relativeX <= this.$refs.progress_bar_control.offsetWidth) {
+    playerControlsMouseMove(event) {
+      if (this.isVolumeMousedown) {
+        // audio volume seek
+        const relativeX =
+          event.clientX - this.$refs.volumeProgressBar.offsetLeft;
+        if (
+          relativeX >= 0 &&
+          relativeX <= this.$refs.volumeProgressBar.offsetWidth
+        ) {
           this.playerSetVolume(relativeX / 100);
         } else if (relativeX < 0) {
           this.playerSetVolume(0);
         } else {
           this.playerSetVolume(1);
         }
+      } else if (this.isTimeMousedown) {
+        // audio currentTime seek
+        const relativeX = event.clientX - this.$refs.timeProgressBar.offsetLeft;
+        if (
+          relativeX >= 0 &&
+          relativeX <= this.$refs.timeProgressBar.offsetWidth
+        ) {
+          this.playerSetTime(
+            (relativeX / this.$refs.timeProgressBar.offsetWidth) *
+              this.getPlayerDuration
+          );
+        } else if (relativeX < 0) {
+          this.playerSetTime(0);
+        } else {
+          this.playerSetTime(this.getPlayerDuration);
+        }
+      }
+    },
+
+    async likeSong(element, songId) {
+      if (!element.classList.contains("disabled")) {
+        element.classList.add("disabled");
+
+        try {
+          await this.$api.songs.likeSong(songId, this.getProfile.accessToken);
+
+          this.getCurrentSong.is_liked = true;
+          this.setNotificationMessage("Saved to Your Library");
+        } catch (error) {
+          if (error.response) {
+            this.setError(error);
+          }
+
+          this.setNotificationMessage("Couldn't Save to Your Library");
+        }
+        element.classList.remove("disabled");
+      }
+    },
+
+    async unlikeSong(element, songId) {
+      if (!element.classList.contains("disabled")) {
+        element.classList.add("disabled");
+
+        try {
+          await this.$api.songs.unlikeSong(songId, this.getProfile.accessToken);
+
+          this.getCurrentSong.is_liked = false;
+          this.setNotificationMessage("Removed from Your Library");
+        } catch (error) {
+          if (error.response) {
+            this.setError(error);
+          }
+          this.setNotificationMessage("Couldn't Remove from Your Library");
+        }
+
+        element.classList.remove("disabled");
       }
     },
   },
@@ -451,6 +582,10 @@ export default {
   font-family: "Montserrat";
   font-weight: 500;
   color: white;
+}
+
+::v-deep(img) {
+  image-rendering: -webkit-optimize-contrast;
 }
 
 html,
@@ -865,12 +1000,14 @@ input:focus {
 .song__title {
   font-size: 1rem;
   line-height: 24px;
+  text-overflow: ellipsis;
 }
 
 .song__autor {
   font-size: 0.8rem;
   line-height: 24px;
   color: #b3b3b3;
+  text-overflow: ellipsis;
   cursor: pointer;
 }
 
@@ -907,6 +1044,15 @@ input:focus {
   color: #ffa1bd;
   border-color: #ffa1bd;
   cursor: pointer;
+}
+
+::v-deep(.disabled) {
+  color: grey;
+}
+
+.liked {
+  opacity: 1;
+  color: #ffa1bd;
 }
 
 .player__controls__progress {
