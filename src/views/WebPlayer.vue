@@ -132,7 +132,7 @@
               </div>
               <div class="fas fa-caret-down caret__down__icon"></div>
 
-              <div ref="dropdown_menu" class="user-bar__dropdown-menu">
+              <div ref="dropdown_menu" class="dropdown-menu__container">
                 <ul class="dropdown-menu">
                   <router-link
                     :to="{ name: 'Main' }"
@@ -213,7 +213,11 @@
 
       <div class="player__controls">
         <div class="player__controls__buttons">
-          <div class="player__button shuffle fas fa-random fa-sm"></div>
+          <div
+            class="player__button shuffle fas fa-random fa-sm"
+            :class="getPlayerIsShuffled ? 'active-button' : ''"
+            @click="shufflePlaylist"
+          ></div>
           <div
             @click="prevSong"
             class="player__button previous fas fa-step-backward fa-sm"
@@ -227,7 +231,12 @@
             @click="nextSong"
             class="player__button next fas fa-step-forward fa-sm"
           ></div>
-          <div class="player__button repeat fas fa-redo-alt fa-sm"></div>
+          <div
+            @click="setRepeat"
+            :class="getPlayerRepeat == 0 ? 'no-repeat' : getPlayerRepeat == 1 ? 'repeat-playlist' : 'repeat-song'"
+          >
+          <i class="player__button fas fa-redo-alt fa-sm"></i>
+          </div>
         </div>
 
         <div class="player__controls__progress">
@@ -282,7 +291,11 @@
           >
             <div
               class="progress__bar"
-              :style="'width: ' + getPlayerVolume * 100 + '%;'"
+              :style="
+                getPlayerIsMuted
+                  ? 'width: 0%;'
+                  : 'width: ' + getPlayerVolume * 100 + '%;'
+              "
             >
               <div class="progress__bar__slider"></div>
             </div>
@@ -316,9 +329,21 @@ export default {
     } else {
       this.playerSetAudioEvents({
         onendedHandler: () => {
-          this.playerNext();
-          this.playerPlay();
-        }
+          if (this.getPlayerRepeat == 2) {
+            // repeat one song
+            this.playerPlay();
+          } else if (this.getPlayerRepeat == 1 && this.getIsCurrentSongLast) {
+            // repeat playlist
+            this.playerNext();
+            this.playerPlay();
+          } else if (this.getIsCurrentSongLast) {
+            // don't repeat playlist, set next song (first) and pause
+            this.playerNext();
+          } else {
+            this.playerNext();
+            this.playerPlay();
+          }
+        },
       });
 
       this.loadPlayerData();
@@ -368,10 +393,13 @@ export default {
     ...mapGetters({
       getPlayerIsPlaying: "player/getIsPlaying",
       getCurrentSong: "player/getCurrentSong",
+      getIsCurrentSongLast: "player/getIsCurrentSongLast",
       getPlayerIsMuted: "player/getIsMuted",
       getPlayerVolume: "player/getVolume",
+      getPlayerRepeat: "player/getRepeat",
       getPlayerTime: "player/getTime",
       getPlayerDuration: "player/getDuration",
+      getPlayerIsShuffled: "player/getIsShuffled",
 
       getProfile: "profile/getProfile",
 
@@ -399,6 +427,11 @@ export default {
       playerPause: "player/PAUSE",
       playerNext: "player/NEXT",
       playerPrev: "player/PREV",
+      playerShufflePlaylist: "player/SHUFFLE_PLAYLIST",
+      playerUnshufflePlaylist: "player/UNSHUFFLE_PLAYLIST",
+      playerNoRepeat: "player/NO_REPEAT",
+      playerRepeatPlaylist: "player/REPEAT_PLAYLIST",
+      playerRepeatSong: "player/REPEAT_SONG",
       playerMute: "player/MUTE_VOLUME",
       playerUnmute: "player/UNMUTE_VOLUME",
       playerSetVolume: "player/SET_VOLUME",
@@ -446,13 +479,37 @@ export default {
     },
 
     nextSong() {
+      if (this.getPlayerRepeat == 2) {
+        this.playerRepeatPlaylist();
+      }
       this.playerNext();
       this.playerPlay();
     },
 
     prevSong() {
+      if (this.getPlayerRepeat == 2) {
+        this.playerRepeatPlaylist();
+      }
       this.playerPrev();
       this.playerPlay();
+    },
+
+    shufflePlaylist() {
+      if (this.getPlayerIsShuffled) {
+        this.playerUnshufflePlaylist();
+      } else {
+        this.playerShufflePlaylist();
+      }
+    },
+
+    setRepeat() {
+      if (this.getPlayerRepeat == 0) {
+        this.playerRepeatPlaylist();
+      } else if (this.getPlayerRepeat == 1) {
+        this.playerRepeatSong();
+      } else {
+        this.playerNoRepeat();
+      }
     },
 
     muteVolume() {
@@ -912,7 +969,7 @@ input:focus {
   margin-right: 8px;
 }
 
-.user-bar__dropdown-menu {
+.dropdown-menu__container {
   position: absolute;
   display: none;
   top: calc(100% + 10px);
@@ -1046,11 +1103,48 @@ input:focus {
   cursor: pointer;
 }
 
+.no-repeat,
+.repeat-playlist,
+.repeat-song {
+  position: relative;
+}
+
+.repeat-playlist i, .repeat-song i{
+  color: #ffa1bd;
+}
+
+.repeat-playlist::after,
+.repeat-song::after {
+  content: "";
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  bottom: -5px;
+  left: calc(50% - 2.5px);
+  border-radius: 50%;
+  background-color: #ffa1bd;
+}
+
+.repeat-song::before {
+  content: "1";
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  right: -6px;
+  top: -3px;
+  font-size: 0.6rem;
+  color: #000;
+  text-align: center;
+  border-radius: 50%;
+  background-color: #ffa1bd;
+}
+
 ::v-deep(.disabled) {
   color: grey;
 }
 
-.liked {
+.liked,
+.active-button {
   opacity: 1;
   color: #ffa1bd;
 }
@@ -1080,7 +1174,6 @@ input:focus {
 
 .progress__bar {
   position: relative;
-  width: 50%;
   height: 4px;
   border-radius: 2px;
   background-color: #ffa1bd;

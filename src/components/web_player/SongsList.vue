@@ -16,14 +16,16 @@
         <div class="compilation__list-item__block list-item__block__number">
           {{ index + 1 }}
         </div>
-        
-        <div v-if="isPlayingSong(song.id)"
+
+        <div
+          v-if="isPlayingSong(song.id)"
           class="fas fa-xs compilation__list-item__block list-item__block__play-song"
           :class="getIsPlaying ? 'fa-pause' : 'fa-play'"
           @click="getIsPlaying ? playerPause() : playerPlay()"
         ></div>
 
-        <div v-else
+        <div
+          v-else
           class="fas fa-play fa-xs compilation__list-item__block list-item__block__play-song"
           @click="playSong(index)"
         ></div>
@@ -71,7 +73,47 @@
             ></i>
           </template>
 
-          <i class="fas fa-ellipsis-h compilation__list-item__menu-item"></i>
+          <i
+            class="fas fa-ellipsis-h compilation__list-item__menu-item"
+            @click.self="openSongMenu"
+          >
+            <div class="dropdown-menu__container">
+              <ul class="dropdown-menu">
+                <li class="dropdown-menu__item">
+                  Add to playlist
+                  <i class="fas fa-caret-right dropdown-menu__item-icon"></i>
+                  <div
+                    v-if="getProfilePlaylists.length"
+                    class="dropdown-inner-menu__container"
+                  >
+                    <ul class="dropdown-menu">
+                      <li
+                        v-for="playlist in getProfilePlaylists"
+                        :key="playlist"
+                        class="dropdown-menu__item"
+                        @click="addSongToPlaylist(song.id, playlist.id)"
+                      >
+                        {{ playlist.title }}
+                      </li>
+                    </ul>
+                  </div>
+                </li>
+                <li
+                  v-if="showDeleteSongMenuItem"
+                  class="dropdown-inner-menu__item"
+                >
+                  Remove Song
+                </li>
+              </ul>
+            </div>
+          </i>
+
+          <i
+            v-if="showDeleteSongFromPlaylistIcon"
+            @click="removeSongFromPlaylist(song.id, playlistId)"
+            title="Remove from playlist"
+            class="far fa-trash-alt compilation__list-item__menu-item"
+          ></i>
         </div>
       </div>
     </section>
@@ -79,7 +121,7 @@
 </template>
 
 <script>
-import { mapGetters, mapMutations } from "vuex";
+import { mapGetters, mapMutations, mapActions } from "vuex";
 
 export default {
   name: "SongsList",
@@ -88,6 +130,16 @@ export default {
     showArtist: {
       type: Boolean,
       default: true,
+    },
+
+    showDeleteSongMenuItem: {
+      type: Boolean,
+      default: false,
+    },
+
+    showDeleteSongFromPlaylistIcon: {
+      type: Boolean,
+      default: false,
     },
 
     isPreview: {
@@ -104,6 +156,19 @@ export default {
     },
   },
 
+  data() {
+    return {
+      isAddingSong: false,
+      isRemovingSong: false,
+      openedSongMenu: null,
+    };
+  },
+
+  mounted() {
+    // close opened menu on click anywhere
+    document.body.addEventListener("click", this.closeSongMenu);
+  },
+
   computed: {
     ...mapGetters({
       getPlaylistId: "player/getPlaylistId",
@@ -111,10 +176,16 @@ export default {
       getIsPlaying: "player/getIsPlaying",
 
       getProfile: "profile/getProfile",
+      getProfilePlaylists: "playlists/getProfilePlaylists",
     }),
   },
 
   methods: {
+    ...mapActions({
+      addSongToPlaylistAction: "playlists/addSongToPlaylistAction",
+      removeSongFromPlaylistAction: "playlists/removeSongFromPlaylistAction",
+    }),
+
     ...mapMutations({
       setError: "SET_ERROR",
       clearError: "CLEAR_ERROR",
@@ -123,8 +194,8 @@ export default {
       playerPlay: "player/PLAY",
       playerPause: "player/PAUSE",
       playerSetPlaylist: "player/SET_PLAYLIST",
-      playerSetCurrentSong: "player/SET_CURRENT_SONG"
-    }), 
+      playerSetCurrentSong: "player/SET_CURRENT_SONG",
+    }),
 
     isPlayingSong(songId) {
       return (
@@ -137,9 +208,9 @@ export default {
       if (this.playlistId != this.getPlaylistId) {
         this.playerSetPlaylist({
           playlistId: this.playlistId,
-          songs: this.songs
+          songs: this.songs,
         });
-      } 
+      }
 
       this.playerSetCurrentSong(songIndex);
       this.playerPlay();
@@ -190,6 +261,76 @@ export default {
         element.classList.remove("disabled");
       }
     },
+
+    openSongMenu(event) {
+      if (
+        this.openedSongMenu &&
+        this.openedSongMenu.menuItem == event.currentTarget.firstChild
+      ) {
+        // clicked on current menu, need only close
+        this.openedSongMenu.songItem.classList.remove("opened-menu");
+        this.openedSongMenu.menuItem.style.display = "none";
+        this.openedSongMenu = null;
+      } else {
+        if (this.openedSongMenu) {
+          // click other menu, need close previous menu
+          this.openedSongMenu.songItem.classList.remove("opened-menu");
+          this.openedSongMenu.menuItem.style.display = "none";
+        }
+
+        // open new current menu
+        this.openedSongMenu = {
+          songItem: event.currentTarget.parentElement.parentElement,
+          menuItem: event.currentTarget.firstChild,
+        };
+        this.openedSongMenu.songItem.classList.add("opened-menu");
+        this.openedSongMenu.menuItem.style.display = "flex";
+
+        // stop body click event for close opened menu
+        event.stopPropagation();
+      }
+    },
+
+    closeSongMenu() {
+      if (this.openedSongMenu) {
+        this.openedSongMenu.songItem.classList.remove("opened-menu");
+        this.openedSongMenu.menuItem.style.display = "none";
+        this.openedSongMenu = null;
+      }
+    },
+
+    async addSongToPlaylist(songId, playlistId) {
+      if (!this.isAddingSong) {
+        this.isAddingSong = true;
+
+        await this.addSongToPlaylistAction({
+          api: this.$api,
+          accessToken: this.getProfile.accessToken,
+          componentName: this.$options.name,
+          playlistId: playlistId,
+          songId: songId,
+        });
+
+        this.isAddingSong = false;
+      }
+    },
+
+    async removeSongFromPlaylist(songId, playlistId) {
+      console.log("removing");
+      if (!this.isRemovingSong) {
+        this.isRemovingSong = true;
+
+        await this.removeSongFromPlaylistAction({
+          api: this.$api,
+          accessToken: this.getProfile.accessToken,
+          componentName: this.$options.name,
+          playlistId: playlistId,
+          songId: songId,
+        });
+
+        this.isRemovingSong = false;
+      }
+    },
   },
 };
 </script>
@@ -235,6 +376,10 @@ export default {
   border-radius: 4px;
 }
 
+.compilation__list-item__menu-item {
+  position: relative;
+}
+
 .compilation__list-item:hover {
   background-color: #2d2d2d;
 }
@@ -244,6 +389,65 @@ export default {
 }
 
 .compilation__list-item:hover .compilation__list-item__menu-item {
+  opacity: 1;
+}
+
+.dropdown-menu__container {
+  position: absolute;
+  display: none;
+  min-width: 160px;
+  top: 0;
+  right: calc(100% + 5px);
+  background-color: #282828;
+  z-index: 2;
+}
+
+.dropdown-inner-menu__container {
+  position: absolute;
+  display: none;
+  min-width: 160px;
+  bottom: 0;
+  right: calc(100% - 1px);
+  background-color: #282828;
+  z-index: 2;
+}
+
+.dropdown-menu__container:hover .dropdown-inner-menu__container {
+  display: flex;
+}
+
+.dropdown-menu {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 4px;
+  list-style: none;
+}
+
+.dropdown-menu__item {
+  position: relative;
+  padding: 12px 18px;
+  font-size: 0.8rem;
+  text-overflow: ellipsis;
+}
+
+.dropdown-menu__item-icon {
+  position: absolute;
+  top: calc(50% - 0.5rem);
+  right: 10px;
+  font-size: 1rem;
+}
+
+.dropdown-menu__item:hover,
+.dropdown-inner-menu__item:hover {
+  background-color: hsla(0, 0%, 100%, 0.1);
+}
+
+.opened-menu {
+  background-color: #2d2d2d;
+}
+
+.opened-menu .compilation__list-item__menu-item {
   opacity: 1;
 }
 
@@ -258,11 +462,13 @@ export default {
   display: none;
 }
 
-.compilation__list-item:hover .list-item__block__play-song, .active-item  .list-item__block__play-song{
+.compilation__list-item:hover .list-item__block__play-song,
+.active-item .list-item__block__play-song {
   display: flex;
 }
 
-.compilation__list-item:hover .list-item__block__number, .active-item  .list-item__block__number {
+.compilation__list-item:hover .list-item__block__number,
+.active-item .list-item__block__number {
   display: none;
 }
 

@@ -24,6 +24,22 @@ export default function (axios_instance) {
             })
         },
 
+        addSongToPlaylist({ playlistId, songId }, accessToken) {
+            return axios_instance.post(`playlist/songs/${playlistId}/${songId}/`, {}, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            })
+        },
+
+        removeSongFromPlaylist({ playlistId, songId }, accessToken) {
+            return axios_instance.delete(`playlist/songs/${playlistId}/${songId}/`, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            })
+        },
+
         likePlaylist(payload, accessToken) {
             return axios_instance.post(`playlist/likes/${payload}/`, {}, {
                 headers: {

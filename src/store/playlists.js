@@ -26,6 +26,12 @@ export default {
             state.playlist = payload;
         },
 
+        REMOVE_SONG_FROM_PLAYLIST(state, payload) {
+            state.playlist.songs = state.playlist.songs.filter((value) => {
+                return value.id != payload;
+            });
+        },
+
         LIKE_PLAYLIST(state, paylaod) {
             if (state.playlist && state.playlist.id == paylaod) {
                 state.playlist.is_liked = true;
@@ -69,7 +75,37 @@ export default {
                 return true;
             } catch (error) {
                 commit("SET_ERROR", { error: error, fromComponentName: componentName }, { root: true });
-                return null;
+                return false;
+            }
+        },
+
+        async addSongToPlaylistAction({ commit }, { api, accessToken, componentName, playlistId, songId }) {
+            try {
+                await api.playlists.addSongToPlaylist({
+                    playlistId: playlistId,
+                    songId: songId
+                }, accessToken);
+                commit("SET_NOTIFICATION_MESSAGE", "Song added to playlist", { root: true });
+                return true;
+            } catch (error) {
+                commit("SET_ERROR", { error: error, fromComponentName: componentName }, { root: true });
+                return false;
+            }
+        },
+
+        async removeSongFromPlaylistAction({ commit, state }, { api, accessToken, componentName, playlistId, songId }) {
+            try {
+                await api.playlists.removeSongFromPlaylist({
+                    playlistId: playlistId,
+                    songId: songId
+                }, accessToken);
+                console.log(state.playlist);
+                commit("REMOVE_SONG_FROM_PLAYLIST", songId);
+                commit("SET_NOTIFICATION_MESSAGE", "Song removed from playlist", { root: true });
+                return true;
+            } catch (error) {
+                commit("SET_ERROR", { error: error, fromComponentName: componentName }, { root: true });
+                return false;
             }
         },
 

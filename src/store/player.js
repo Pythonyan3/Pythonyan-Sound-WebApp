@@ -6,7 +6,7 @@ export default {
             isPlaying: false,
             isMuted: false,
             duration: 0,
-            time:0,
+            time: 0,
             volume: 1.0,
             repeat: 0,
         },
@@ -21,9 +21,16 @@ export default {
 
         getCurrentSong(state) {
             if (state.playlistInfo) {
+                if (state.playlistInfo.shuffledSongs.length) {
+                    return state.playlistInfo.shuffledSongs[state.playlistInfo.currentSongIndex];
+                }
                 return state.playlistInfo.songs[state.playlistInfo.currentSongIndex];
             }
             return null;
+        },
+
+        getIsCurrentSongLast(state) {
+            return state.playlistInfo.currentSongIndex == state.playlistInfo.songs.length-1;
         },
 
         getIsPlaying(state) {
@@ -49,6 +56,13 @@ export default {
         getRepeat(state) {
             return state.playerInfo.repeat;
         },
+
+        getIsShuffled(state) {
+            if (state.playlistInfo) {
+                return state.playlistInfo.shuffledSongs.length;
+            }
+            return null;
+        }
     },
     mutations: {
         SAVE_PLAYER_DATA(state) {
@@ -85,11 +99,11 @@ export default {
                     isPlaying: false,
                     isMuted: false,
                     duration: 0,
-                    time:0,
+                    time: 0,
                     volume: 1.0,
                     repeat: 0,
                 },
-                localStorage.removeItem("playerInfo");
+                    localStorage.removeItem("playerInfo");
             }
         },
 
@@ -115,9 +129,9 @@ export default {
 
             state.audio.onvolumechange = () => {
                 if (state.audio.volume == 0 || state.audio.muted) {
-                    state.playerInfo.isMuted = true;    
+                    state.playerInfo.isMuted = true;
                 } else {
-                    state.playerInfo.isMuted = false;    
+                    state.playerInfo.isMuted = false;
                 }
                 state.playerInfo.volume = state.audio.volume;
 
@@ -130,31 +144,51 @@ export default {
                 state.playerInfo.time = state.audio.currentTime;
             },
 
-            state.audio.ondurationchange = () => {
-                state.playerInfo.duration = state.audio.duration;
+                state.audio.ondurationchange = () => {
+                    state.playerInfo.duration = state.audio.duration;
 
-            }
+                }
         },
 
         SET_PLAYLIST(state, { playlistId, songs }) {
             if (songs.length) {
                 state.playlistInfo = {
                     playlistId: playlistId,
-                    songs: songs,            
-                    shuffledsongs: [],
+                    songs: songs,
+                    shuffledSongs: [],
                     currentSongIndex: 0
                 }
-                
+
                 state.audio.src = state.playlistInfo.songs[0].audio
                 state.audio.load();
             }
         },
 
-        SET_CURRENT_SONG(state, payload) {
-            if (payload >= 0 && payload <= state.playlistInfo.songs.length-1) {
-                state.playlistInfo.currentSongIndex = payload;
+        SHUFFLE_PLAYLIST(state) {
+            if (state.playlistInfo) {
+                state.playlistInfo.shuffledSongs = state.playlistInfo.songs.slice();
+                for (let i = state.playlistInfo.shuffledSongs.length - 1; i >= 0; i--) {
+                    let j = Math.floor(Math.random() * (i + 1));
+                    [state.playlistInfo.shuffledSongs[i], state.playlistInfo.shuffledSongs[j]] = [state.playlistInfo.shuffledSongs[j], state.playlistInfo.shuffledSongs[i]];
+                }
+                state.playlistInfo.currentSongIndex = state.playlistInfo.shuffledSongs.indexOf(state.playlistInfo.songs[state.playlistInfo.currentSongIndex]);
+            }
+        },
 
-                state.audio.src = state.playlistInfo.songs[state.playlistInfo.currentSongIndex].audio
+        UNSHUFFLE_PLAYLIST(state) {
+            state.playlistInfo.currentSongIndex = state.playlistInfo.songs.indexOf(state.playlistInfo.shuffledSongs[state.playlistInfo.currentSongIndex]);
+            state.playlistInfo.shuffledSongs = [];
+        },
+
+        SET_CURRENT_SONG(state, payload) {
+            if (payload >= 0 && payload <= state.playlistInfo.songs.length - 1) {
+                if (state.playlistInfo.shuffledSongs.length) {
+                    state.playlistInfo.currentSongIndex = state.playlistInfo.shuffledSongs.indexOf(state.playlistInfo.songs[payload]);
+                    state.audio.src = state.playlistInfo.shuffledSongs[state.playlistInfo.currentSongIndex].audio
+                } else {
+                    state.playlistInfo.currentSongIndex = payload;
+                    state.audio.src = state.playlistInfo.songs[state.playlistInfo.currentSongIndex].audio
+                }
                 state.audio.load();
             }
         },
@@ -168,29 +202,52 @@ export default {
         PAUSE(state) {
             if (state.audio.src) {
                 state.audio.pause();
-            }            
+            }
         },
 
         NEXT(state) {
-            if (state.playlistInfo.currentSongIndex < state.playlistInfo.songs.length-1) {    
+            if (state.playlistInfo.currentSongIndex < state.playlistInfo.songs.length - 1) {
                 state.playlistInfo.currentSongIndex++;
-            } else if (state.playlistInfo.currentSongIndex == state.playlistInfo.songs.length-1) {
+            } else if (state.playlistInfo.currentSongIndex == state.playlistInfo.songs.length - 1) {
                 state.playlistInfo.currentSongIndex = 0;
             }
 
-            state.audio.src = state.playlistInfo.songs[state.playlistInfo.currentSongIndex].audio;
+            if (state.playlistInfo.shuffledSongs.length) {
+                state.audio.src = state.playlistInfo.shuffledSongs[state.playlistInfo.currentSongIndex].audio;
+            } else {
+                state.audio.src = state.playlistInfo.songs[state.playlistInfo.currentSongIndex].audio;
+            }
+            state.playerInfo.time = 0;
             state.audio.load();
         },
 
         PREV(state) {
-            if (state.playlistInfo.currentSongIndex > 0) {    
+            if (state.playlistInfo.currentSongIndex > 0) {
                 state.playlistInfo.currentSongIndex--;
             } else if (state.playlistInfo.currentSongIndex == 0) {
-                state.playlistInfo.currentSongIndex = state.playlistInfo.songs.length-1;
+                state.playlistInfo.currentSongIndex = state.playlistInfo.songs.length - 1;
             }
 
-            state.audio.src = state.playlistInfo.songs[state.playlistInfo.currentSongIndex].audio;    
-            state.audio.load();        
+            if (state.playlistInfo.shuffledSongs.length) {
+                state.audio.src = state.playlistInfo.shuffledSongs[state.playlistInfo.currentSongIndex].audio;
+            } else {
+                state.audio.src = state.playlistInfo.songs[state.playlistInfo.currentSongIndex].audio;
+            }
+
+            state.playerInfo.time = 0;
+            state.audio.load();
+        },
+
+        NO_REPEAT(state) {
+            state.playerInfo.repeat = 0;
+        },
+
+        REPEAT_PLAYLIST(state) {
+            state.playerInfo.repeat = 1;
+        },
+
+        REPEAT_SONG(state) {
+            state.playerInfo.repeat = 2;
         },
 
         MUTE_VOLUME(state) {

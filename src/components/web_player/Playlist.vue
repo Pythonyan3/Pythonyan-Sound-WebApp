@@ -44,8 +44,13 @@
             </div>
           </div>
 
-          <div v-if="!isLoading && getPlaylist && getPlaylist.songs.length" class="playlist-controls">
-            <div @click="playPlaylist" class="playlist-controls__play">
+          <div v-if="!isLoading && getPlaylist" class="playlist-controls">
+            <div
+              v-if="getPlaylist.songs.length"
+              @click="playPlaylist"
+              class="playlist-controls__play"
+              title="Play playlist"
+            >
               <i
                 class="fas"
                 :class="
@@ -60,17 +65,32 @@
                 v-if="getPlaylist.is_liked"
                 @click="unlikePlaylist($event.currentTarget)"
                 class="fas fa-heart playlist-controls__unfollow"
+                title="Unlike playlist"
               />
               <i
                 v-else
                 class="far fa-heart playlist-controls__follow"
                 @click="likePlaylist($event.currentTarget)"
+                title="Like playlist"
               />
             </template>
+
+            <i
+              v-if="getPlaylist.owner.id == getProfile.id"
+              title="Remove playlist"
+              class="far fa-trash-alt playlist-controls__remove"
+            ></i>
           </div>
 
           <!--Songs-->
-          <SongsList v-if="!isLoading && getPlaylist" :songs="getPlaylist.songs" :playlistId="getPlaylist.id" />
+          <SongsList
+            v-if="!isLoading && getPlaylist"
+            :songs="getPlaylist.songs"
+            :playlistId="getPlaylist.id"
+            :showDeleteSongFromPlaylistIcon="
+              getPlaylist.owner.id == getProfile.id ? true : false
+            "
+          />
         </div>
       </div>
     </div>
@@ -115,7 +135,7 @@ export default {
   },
 
   unmounted() {
-    this.clearError()
+    this.clearError();
   },
 
   watch: {
@@ -136,7 +156,7 @@ export default {
     ...mapMutations({
       setError: "SET_ERROR",
       clearError: "CLEAR_ERROR",
-      setNotificationMessage: "SET_NOTIFICATION_MESSAGE"
+      setNotificationMessage: "SET_NOTIFICATION_MESSAGE",
     }),
 
     async getPlaylistInfo() {
@@ -160,7 +180,7 @@ export default {
           api: this.$api,
           accessToken: this.getProfile.accessToken,
           componentName: this.$options.name,
-          playlistId: this.getPlaylist.id
+          playlistId: this.getPlaylist.id,
         });
 
         element.classList.remove("disabled");
@@ -175,8 +195,8 @@ export default {
           api: this.$api,
           accessToken: this.getProfile.accessToken,
           componentName: this.$options.name,
-          playlistId: this.getPlaylist.id
-        })
+          playlistId: this.getPlaylist.id,
+        });
 
         element.classList.remove("disabled");
       }
@@ -301,11 +321,12 @@ export default {
 }
 
 .playlist-controls__follow,
-.playlist-controls__unfollow {
+.playlist-controls__unfollow,
+.playlist-controls__remove {
+  margin-right: 32px;
   font-size: 2rem;
   cursor: pointer;
   transition: 0.1s;
-  color: #fff;
 }
 
 .disabled {
@@ -317,7 +338,8 @@ export default {
   color: #ffa1bd;
 }
 
-.playlist-controls__follow:hover {
+.playlist-controls__follow:hover,
+.playlist-controls__remove:hover {
   color: #ffa1bd;
 }
 </style>
